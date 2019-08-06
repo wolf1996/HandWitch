@@ -1,12 +1,19 @@
 package core
 
 import (
+	"errors"
 	"html/template"
 	"io"
 	"net/http"
 )
 
-type ParamsDescription = map[string]string
+type ParamInfo = string
+type ParamsDescription = map[string]ParamInfo
+
+var (
+	NonExistentHandError  = errors.New("Can't Find key")
+	NonExistentParamError = errors.New("Can't Find param")
+)
 
 type UrlRecord struct {
 	UrlTemplate     template.URL
@@ -20,25 +27,34 @@ type UrlRecord struct {
 type UrlContrainer = map[string]UrlRecord
 
 type UrlProcessor struct {
-	container  *UrlContrainer
+	container  UrlContrainer
 	httpClient *http.Client
 }
 
-func NewUrlProcessor(container *UrlContrainer, httpClient *http.Client) UrlProcessor {
+type HandProcessor interface {
+	WriteHelp(writer io.Writer) error
+	Process(writer io.Writer) error
+	GetInfo() *UrlRecord
+	GetParam(string) (ParamProcessor, error)
+}
+
+type ParamProcessor interface {
+	WriteHelp(writer io.Writer) error
+	GetInfo() ParamInfo
+}
+
+func NewUrlProcessor(container UrlContrainer, httpClient *http.Client) UrlProcessor {
 	return UrlProcessor{
 		container:  container,
 		httpClient: httpClient,
 	}
 }
 
-func (processor *UrlProcessor) ProcessHand(name string, writer io.Writer) error {
-	return nil
-}
-
-func (processor *UrlProcessor) GetParamDescription(name string, writer io.Writer) error {
-	return nil
-}
-
-func (processor *UrlProcessor) GetHelp(writer io.Writer, handName string) error {
-	return nil
+func (processor *UrlProcessor) GetHand(name string) (HandProcessor, error) {
+	urlInfo, ok := processor.container[name]
+	if !ok {
+		return nil, NonExistentHandError
+	}
+	handProc := NewHandProcessor(&urlInfo)
+	return handProc, nil
 }

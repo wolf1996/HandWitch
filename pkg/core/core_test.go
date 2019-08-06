@@ -1,7 +1,6 @@
 package core
 
 import (
-	"bufio"
 	"bytes"
 	"fmt"
 	"net/http"
@@ -14,11 +13,11 @@ type Input struct {
 func TestParametersList(t *testing.T) {
 	testCases := []struct {
 		inp UrlContrainer
-		out ParamsDescription
+		out map[string]map[string]string
 	}{
 		{
 			UrlContrainer{
-				"": {
+				"hand1": {
 					UrlTemplate: "",
 					UrlParameters: ParamsDescription{
 						"a": "b",
@@ -30,9 +29,11 @@ func TestParametersList(t *testing.T) {
 					UrlName: "name",
 				},
 			},
-			ParamsDescription{
-				"a": "b",
-				"c": "d",
+			map[string]map[string]string{
+				"hand1": {
+					"a": "b",
+					"c": "d",
+				},
 			},
 		},
 	}
@@ -40,13 +41,23 @@ func TestParametersList(t *testing.T) {
 	for _, testCase := range testCases {
 		input := testCase.inp
 		output := testCase.out
-		processor := NewUrlProcessor(&input, nil)
-		for key, val := range output {
+		processor := NewUrlProcessor(input, nil)
+		for key, params := range output {
 			buf := new(bytes.Buffer)
-			processor.GetParamDescription(key, bufio.NewWriter(buf))
-			got := buf.String()
-			if got != val {
-				t.Errorf("Failed to get parameter help %s expected %s got %s", key, val, got)
+			handDescr, err := processor.GetHand(key)
+			if err != nil {
+				t.Errorf("Failed to get hand handler %s for hand %s", err.Error(), key)
+			}
+			for paramName, expect := range params {
+				param, err := handDescr.GetParam(paramName)
+				if err != nil {
+					t.Errorf("Failed to get param handler %s for param %s for hand %s", err.Error(), paramName, key)
+				}
+				param.WriteHelp(buf)
+				got := buf.String()
+				if got != expect {
+					t.Errorf("Failed to get parameter help %s expected %s got %s", key, expect, got)
+				}
 			}
 		}
 	}
@@ -127,10 +138,14 @@ func TestHelp(t *testing.T) {
 	for _, testCase := range testCases {
 		input := testCase.inp
 		output := testCase.out
-		processor := NewUrlProcessor(&input, nil)
+		processor := NewUrlProcessor(input, nil)
 		for key, val := range output {
 			buf := new(bytes.Buffer)
-			processor.ProcessHand(key, bufio.NewWriter(buf))
+			handProcessor, err := processor.GetHand(key)
+			if err != nil {
+				t.Errorf("Failed to get param handler %s for hand %s", err.Error(), key)
+			}
+			handProcessor.WriteHelp(buf)
 			got := buf.String()
 			if got != val {
 				t.Errorf("Failed to get parameter help %s expected %s got %s", key, val, got)
@@ -200,10 +215,14 @@ func TestRender(t *testing.T) {
 	for _, testCase := range testCases {
 		input := testCase.inp
 		output := testCase.out
-		processor := NewUrlProcessor(&input.UrlS, nil)
+		processor := NewUrlProcessor(input.UrlS, nil)
 		for key, expect := range output {
 			buf := new(bytes.Buffer)
-			processor.ProcessHand(key, bufio.NewWriter(buf))
+			handProcessor, err := processor.GetHand(key)
+			if err != nil {
+				t.Errorf("Failed to get param handler %s for hand %s", err.Error(), key)
+			}
+			handProcessor.Process(buf)
 			got := buf.String()
 			if got != expect.Output {
 				t.Errorf("Failed to get parameter help %s expected %s got %s", key, expect.Output, got)
