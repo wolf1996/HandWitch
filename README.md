@@ -1,2 +1,2 @@
 # HandWitch
-Bot to use some hands with HumanReadable form and documentation.
+Bot and cli to use some links with HumanReadable form and documentation.
