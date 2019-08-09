@@ -2,13 +2,62 @@ package core
 
 import (
 	"errors"
+	"fmt"
 	"html/template"
 	"io"
 	"net/http"
 )
 
-type ParamInfo = string
-type ParamsDescription = map[string]ParamInfo
+type ParamDestination int
+
+const (
+	URL_PARAM ParamDestination = iota
+	QUERY_PARAM
+)
+
+func (dst ParamDestination) ToString() (string, error) {
+	switch dst {
+	case URL_PARAM:
+		{
+			return "URL Param", nil
+		}
+	case QUERY_PARAM:
+		{
+			return "Query Param", nil
+		}
+	}
+	return "", fmt.Errorf("Wrong parameter destination %d", dst)
+}
+
+type ParamType int
+
+const (
+	INTEGER ParamType = iota
+	STRING
+)
+
+func (tp ParamType) ToString() (string, error) {
+	switch tp {
+	case INTEGER:
+		{
+			return "Integer", nil
+		}
+	case STRING:
+		{
+			return "String", nil
+		}
+	}
+	return "", fmt.Errorf("Wrong parameter type %d", tp)
+}
+
+type ParamInfo struct {
+	Help        string
+	Name        string
+	Destination ParamDestination
+	Type        ParamType
+}
+
+type ParamsDescription map[string]ParamInfo
 
 var (
 	NonExistentHandError  = errors.New("Can't Find key")
@@ -16,15 +65,14 @@ var (
 )
 
 type UrlRecord struct {
-	UrlTemplate     template.URL
-	UrlParameters   ParamsDescription
-	QueryParameters ParamsDescription
-	Body            string
-	UrlName         string
-	Help            string
+	UrlTemplate template.URL
+	Parameters  ParamsDescription
+	Body        string
+	UrlName     string
+	Help        string
 }
 
-type UrlContrainer = map[string]UrlRecord
+type UrlContrainer map[string]UrlRecord
 
 type UrlProcessor struct {
 	container  UrlContrainer

@@ -1,6 +1,7 @@
 package core
 
 import (
+	"fmt"
 	"io"
 )
 
@@ -12,6 +13,7 @@ func NewHandProcessor(rec *UrlRecord) HandProcessor {
 	imp := HandProcessorImp{rec}
 	return &imp
 }
+
 func (*HandProcessorImp) WriteHelp(writer io.Writer) error {
 	return nil
 }
@@ -25,7 +27,7 @@ func (*HandProcessorImp) GetInfo() *UrlRecord {
 }
 
 func (imp *HandProcessorImp) GetParam(paramName string) (ParamProcessor, error) {
-	paramValue, ok := imp.UrlParameters[paramName]
+	paramValue, ok := imp.Parameters[paramName]
 	if !ok {
 		return nil, NonExistentParamError
 	}
@@ -41,8 +43,24 @@ func NewParamProcessor(info ParamInfo) ParamProcessorImp {
 	return ParamProcessorImp{info}
 }
 
-func (*ParamProcessorImp) WriteHelp(writer io.Writer) error {
-	return nil
+func (p *ParamProcessorImp) WriteHelp(writer io.Writer) error {
+	destination, err := p.Destination.ToString()
+	if err != nil {
+		return err
+	}
+	typeStr, err := p.Type.ToString()
+	if err != nil {
+		return err
+	}
+	res := fmt.Sprintf(
+		"%s(%s)\t%s\n%s",
+		p.Name,
+		typeStr,
+		destination,
+		p.Help,
+	)
+	_, err = io.WriteString(writer, res)
+	return err
 }
 
 func (imp *ParamProcessorImp) GetInfo() ParamInfo {

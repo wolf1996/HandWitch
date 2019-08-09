@@ -19,11 +19,19 @@ func TestParametersList(t *testing.T) {
 			UrlContrainer{
 				"hand1": {
 					UrlTemplate: "",
-					UrlParameters: ParamsDescription{
-						"a": "b",
-					},
-					QueryParameters: ParamsDescription{
-						"c": "d",
+					Parameters: ParamsDescription{
+						"Name1": ParamInfo{
+							Name:        "Name1",
+							Help:        "Help to Name1",
+							Type:        INTEGER,
+							Destination: QUERY_PARAM,
+						},
+						"Name2": ParamInfo{
+							Name:        "Name2",
+							Help:        "Help to Name2",
+							Type:        STRING,
+							Destination: URL_PARAM,
+						},
 					},
 					Body:    "",
 					UrlName: "name",
@@ -31,8 +39,8 @@ func TestParametersList(t *testing.T) {
 			},
 			map[string]map[string]string{
 				"hand1": {
-					"a": "b",
-					"c": "d",
+					"Name1": "Name1(Integer)\tQuery Param\nHelp to Name1",
+					"Name2": "Name2(String)\tURL Param\nHelp to Name2",
 				},
 			},
 		},
@@ -43,20 +51,26 @@ func TestParametersList(t *testing.T) {
 		output := testCase.out
 		processor := NewUrlProcessor(input, nil)
 		for key, params := range output {
-			buf := new(bytes.Buffer)
 			handDescr, err := processor.GetHand(key)
 			if err != nil {
 				t.Errorf("Failed to get hand handler %s for hand %s", err.Error(), key)
+				continue
 			}
 			for paramName, expect := range params {
+				buf := new(bytes.Buffer)
 				param, err := handDescr.GetParam(paramName)
 				if err != nil {
 					t.Errorf("Failed to get param handler %s for param %s for hand %s", err.Error(), paramName, key)
+					continue
 				}
-				param.WriteHelp(buf)
+				err = param.WriteHelp(buf)
+				if err != nil {
+					t.Errorf("Failed to write param handler %s for param %s for hand %s", err.Error(), paramName, key)
+					continue
+				}
 				got := buf.String()
 				if got != expect {
-					t.Errorf("Failed to get parameter help %s expected %s got %s", key, expect, got)
+					t.Errorf("Wrong parameter help %s param name %s expected \n%s\n got\n%s", key, paramName, expect, got)
 				}
 			}
 		}
@@ -72,41 +86,78 @@ func TestHelp(t *testing.T) {
 			UrlContrainer{
 				"hand1": {
 					UrlTemplate: "http://example.com/entity/{entity_id}/v/{v}",
-					UrlParameters: ParamsDescription{
-						"entity_id": "Entity id as an integer",
-						"v":         "V value",
-					},
-					QueryParameters: ParamsDescription{
-						"QueryParam1": "Query Parameter help 1 ",
-						"QueryParam2": "Query Parameter help 2 ",
+					Parameters: ParamsDescription{
+						"entity_id": ParamInfo{
+							Name:        "entity_id",
+							Help:        "Help to entity_id",
+							Type:        INTEGER,
+							Destination: URL_PARAM,
+						},
+						"v": ParamInfo{
+							Name:        "v",
+							Help:        "Help to v",
+							Type:        STRING,
+							Destination: URL_PARAM,
+						},
+						"QueryParam1": ParamInfo{
+							Name:        "QueryParam1",
+							Help:        "Help to QueryParam1",
+							Type:        INTEGER,
+							Destination: QUERY_PARAM,
+						},
+						"QueryParam2": ParamInfo{
+							Name:        "QueryParam2",
+							Help:        "Help to QueryParam2",
+							Type:        STRING,
+							Destination: QUERY_PARAM,
+						},
 					},
 					Body:    "",
 					UrlName: "hand1",
 				},
 				"handNoUrlParams": {
-					UrlTemplate:   "http://example.com/entity",
-					UrlParameters: ParamsDescription{},
-					QueryParameters: ParamsDescription{
-						"QueryParam1": "Query Parameter help 1 ",
-						"QueryParam2": "Query Parameter help 2 ",
+					UrlTemplate: "http://example.com/entity",
+					Parameters: ParamsDescription{
+						"QueryParam1": ParamInfo{
+							Name:        "QueryParam1",
+							Help:        "Help to QueryParam1",
+							Type:        INTEGER,
+							Destination: QUERY_PARAM,
+						},
+						"QueryParam2": ParamInfo{
+							Name:        "QueryParam2",
+							Help:        "Help to QueryParam2",
+							Type:        STRING,
+							Destination: QUERY_PARAM,
+						},
 					},
 					Body:    "",
 					UrlName: "handNoUrlParams",
 				},
 				"handNoQueryParams": {
 					UrlTemplate: "http://example.com/entity/{entity_id}/v/{v}",
-					UrlParameters: ParamsDescription{
-						"entity_id": "Entity id as an integer",
-						"v":         "V value",
+					Parameters: ParamsDescription{
+						"entity_id": ParamInfo{
+							Name:        "entity_id",
+							Help:        "Help to entity_id",
+							Type:        INTEGER,
+							Destination: URL_PARAM,
+						},
+						"v": ParamInfo{
+							Name:        "v",
+							Help:        "Help to v",
+							Type:        STRING,
+							Destination: URL_PARAM,
+						},
 					},
 					Body:    "",
 					UrlName: "handNoQueryParams",
 				},
 				"handNoParams": {
-					UrlTemplate:   "http://example.com/entity/",
-					UrlParameters: ParamsDescription{},
-					Body:          "",
-					UrlName:       "handNoParams",
+					UrlTemplate: "http://example.com/entity/",
+					Parameters:  ParamsDescription{},
+					Body:        "",
+					UrlName:     "handNoParams",
 				},
 			},
 			map[string]string{
@@ -181,13 +232,31 @@ func TestRender(t *testing.T) {
 				UrlContrainer{
 					"hand1": {
 						UrlTemplate: "http://example.com/entity/{entity_id}/v/{v}",
-						UrlParameters: ParamsDescription{
-							"entity_id": "Entity id as an integer",
-							"v":         "V value",
-						},
-						QueryParameters: ParamsDescription{
-							"QueryParam1": "Query Parameter help 1 ",
-							"QueryParam2": "Query Parameter help 2 ",
+						Parameters: ParamsDescription{
+							"entity_id": ParamInfo{
+								Name:        "entity_id",
+								Help:        "Help to entity_id",
+								Type:        INTEGER,
+								Destination: URL_PARAM,
+							},
+							"v": ParamInfo{
+								Name:        "v",
+								Help:        "Help to v",
+								Type:        STRING,
+								Destination: URL_PARAM,
+							},
+							"QueryParam1": ParamInfo{
+								Name:        "QueryParam1",
+								Help:        "Help to QueryParam1",
+								Type:        INTEGER,
+								Destination: QUERY_PARAM,
+							},
+							"QueryParam2": ParamInfo{
+								Name:        "QueryParam2",
+								Help:        "Help to QueryParam2",
+								Type:        STRING,
+								Destination: QUERY_PARAM,
+							},
 						},
 						Body:    "{{GetValue(\"value\")}}",
 						UrlName: "ValuableName",
