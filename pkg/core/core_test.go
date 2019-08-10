@@ -7,9 +7,6 @@ import (
 	"testing"
 )
 
-type Input struct {
-}
-
 func TestParametersList(t *testing.T) {
 	testCases := []struct {
 		inp UrlContrainer
@@ -194,9 +191,12 @@ func TestHelp(t *testing.T) {
 			buf := new(bytes.Buffer)
 			handProcessor, err := processor.GetHand(key)
 			if err != nil {
-				t.Errorf("Failed to get param handler %s for hand %s", err.Error(), key)
+				t.Errorf("Failed to get handler %s for hand %s", err.Error(), key)
 			}
-			handProcessor.WriteHelp(buf)
+			err = handProcessor.WriteHelp(buf)
+			if err != nil {
+				t.Errorf("Failed to process help %s for hand %s", err.Error(), key)
+			}
 			got := buf.String()
 			if got != val {
 				t.Errorf("Failed to get parameter help %s expected %s got %s", key, val, got)
@@ -291,7 +291,10 @@ func TestRender(t *testing.T) {
 			if err != nil {
 				t.Errorf("Failed to get param handler %s for hand %s", err.Error(), key)
 			}
-			handProcessor.Process(buf)
+			err = handProcessor.Process(buf)
+			if err != nil {
+				t.Errorf("Failed to process param handler %s for hand %s", err.Error(), key)
+			}
 			got := buf.String()
 			if got != expect.Output {
 				t.Errorf("Failed to get parameter help %s expected %s got %s", key, expect.Output, got)
