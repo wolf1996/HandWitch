@@ -36,8 +36,8 @@ func TestParametersList(t *testing.T) {
 			},
 			map[string]map[string]string{
 				"hand1": {
-					"Name1": "Name1(Integer)\tQuery Param\nHelp to Name1",
-					"Name2": "Name2(String)\tURL Param\nHelp to Name2",
+					"Name1": "Name1(Integer)\tQuery Param\n\tHelp to Name1\n",
+					"Name2": "Name2(String)\tURL Param\n\tHelp to Name2\n",
 				},
 			},
 		},
@@ -161,24 +161,20 @@ func TestHelp(t *testing.T) {
 				"hand1": "Name: hand1\n" +
 					"URL template: http://example.com/entity/{entity_id}/v/{v}\n" +
 					"Parameters:\n" +
-					"UrlPart Parameters: \n" +
-					"	entity_id: Entity id as an integer\n" +
-					"	v: V value\n" +
-					"QueryParameters:\n" +
-					"	QueryParam1: Query Parameter help 1\n" +
-					"	QueryParam2: Query Parameter help 2\n",
+					"QueryParam1(Integer)\tQuery Param\n\tHelp to QueryParam1\n" +
+					"QueryParam2(String)\tQuery Param\n\tHelp to QueryParam2\n" +
+					"entity_id(Integer)\tURL Param\n\tHelp to entity_id\n" +
+					"v(String)\tURL Param\n\tHelp to v\n",
 				"handNoUrlParams": "Name: handNoUrlParams\n" +
-					"URL template: http://example.com/entity/\n" +
+					"URL template: http://example.com/entity\n" +
 					"Parameters:\n" +
-					"QueryParameters:\n" +
-					"	QueryParam1: Query Parameter help 1\n" +
-					"	QueryParam2: Query Parameter help 2\n",
+					"QueryParam1(Integer)\tQuery Param\n\tHelp to QueryParam1\n" +
+					"QueryParam2(String)\tQuery Param\n\tHelp to QueryParam2\n",
 				"handNoQueryParams": "Name: handNoQueryParams\n" +
-					"URL template: http://example.com/entity/\n" +
+					"URL template: http://example.com/entity/{entity_id}/v/{v}\n" +
 					"Parameters:\n" +
-					"UrlPart Parameters: \n" +
-					"	entity_id: Entity id as an integer\n" +
-					"	v: V value\n",
+					"entity_id(Integer)\tURL Param\n\tHelp to entity_id\n" +
+					"v(String)\tURL Param\n\tHelp to v\n",
 			},
 		},
 	}

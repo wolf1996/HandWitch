@@ -3,6 +3,7 @@ package core
 import (
 	"fmt"
 	"io"
+	"sort"
 )
 
 type HandProcessorImp struct {
@@ -14,7 +15,36 @@ func NewHandProcessor(rec *UrlRecord) HandProcessor {
 	return &imp
 }
 
-func (*HandProcessorImp) WriteHelp(writer io.Writer) error {
+func (processor *HandProcessorImp) WriteHelp(writer io.Writer) error {
+	_, err := io.WriteString(writer, fmt.Sprintf("Name: %s\n", processor.UrlName))
+	if err != nil {
+		return err
+	}
+	_, err = io.WriteString(writer, fmt.Sprintf("URL template: %s\n", string(processor.UrlTemplate)))
+	if err != nil {
+		return err
+	}
+	_, err = io.WriteString(writer, fmt.Sprintf("Parameters:\n"))
+	if err != nil {
+		return err
+	}
+	var keys []string
+	for key := range processor.UrlRecord.Parameters {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	for _, key := range keys {
+		proc, _ := processor.GetParam(key)
+		if err != nil {
+			// TODO: Предположим что ошибок тут быть не может, но если есть
+			// падаем
+			return err
+		}
+		err = proc.WriteHelp(writer)
+		if err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
@@ -53,7 +83,7 @@ func (p *ParamProcessorImp) WriteHelp(writer io.Writer) error {
 		return err
 	}
 	res := fmt.Sprintf(
-		"%s(%s)\t%s\n%s",
+		"%s(%s)\t%s\n\t%s\n",
 		p.Name,
 		typeStr,
 		destination,
