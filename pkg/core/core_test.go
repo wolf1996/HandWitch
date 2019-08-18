@@ -2,8 +2,10 @@ package core
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 )
 
@@ -209,25 +211,38 @@ func TestRender(t *testing.T) {
 		}
 		return req
 	}
-	var reqs []*http.Request
+
+	var requests []*http.Request
+
+	handler := func(rw http.ResponseWriter, req *http.Request) {
+	}
+
+	serv := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		requests = append(requests, req)
+		handler(rw, req)
+	}))
+	defer serv.Close()
+
 	testCases := []struct {
 		inp struct {
 			UrlS    UrlContrainer
-			Handler http.HandlerFunc
+			Handler func(rw http.ResponseWriter, req *http.Request)
 		}
 		out map[string]struct {
+			Inp      map[string]interface{}
 			Output   string
 			Requests []*http.Request
+			Err      error
 		}
 	}{
 		{
 			struct {
 				UrlS    UrlContrainer
-				Handler http.HandlerFunc
+				Handler func(rw http.ResponseWriter, req *http.Request)
 			}{
 				UrlContrainer{
 					"hand1": {
-						UrlTemplate: "http://example.com/entity/{entity_id}/v/{v}",
+						UrlTemplate: fmt.Sprintf("%s/entity/{entity_id}/v/{v}", serv.URL),
 						Parameters: ParamsDescription{
 							"entity_id": ParamInfo{
 								Name:        "entity_id",
@@ -254,48 +269,75 @@ func TestRender(t *testing.T) {
 								Destination: QUERY_PARAM,
 							},
 						},
-						Body:    "{{GetValue(\"value\")}}",
+						Body:    "Value of Value is {{ .value }}",
 						UrlName: "ValuableName",
 					},
 				},
-				http.HandlerFunc(
-					func(rw http.ResponseWriter, req *http.Request) {
-						reqs = append(reqs, req)
-					}),
+				func(rw http.ResponseWriter, req *http.Request) {
+					err := json.NewEncoder(rw).Encode(map[string]interface{}{
+						"value": "ValueForValue",
+					})
+					if err != nil {
+						panic(err.Error())
+					}
+				},
 			},
 			map[string]struct {
+				Inp      map[string]interface{}
 				Output   string
 				Requests []*http.Request
+				Err      error
 			}{
 				"hand1": {
-					"valueValue1",
-					[]*http.Request{
-						mustBuildRequest("GET", "http://example.com/entity/{entity_id}/v/{v}"),
+					map[string]interface{}{
+						"entity_id":   1,
+						"v":           "a",
+						"QueryParam1": 2,
+						"QueryParam2": "b",
 					},
+					"Value of Value is ValueForValue",
+					[]*http.Request{
+						mustBuildRequest("GET", fmt.Sprintf("%s/entity/{entity_id}/v/{v}", serv.URL)),
+					},
+					nil,
 				},
 			},
 		},
 	}
-
 	for _, testCase := range testCases {
 		input := testCase.inp
 		output := testCase.out
-		processor := NewUrlProcessor(input.UrlS, nil)
+		handler = input.Handler
+		processor := NewUrlProcessor(input.UrlS, serv.Client())
+	KEYLOOP:
 		for key, expect := range output {
 			buf := new(bytes.Buffer)
 			handProcessor, err := processor.GetHand(key)
 			if err != nil {
+				if err != expect.Err {
+					continue KEYLOOP
+				}
 				t.Errorf("Failed to get param handler %s for hand %s", err.Error(), key)
+				continue
 			}
-			err = handProcessor.Process(buf)
+			err = handProcessor.Process(buf, expect.Inp)
 			if err != nil {
+				if err != expect.Err {
+					continue KEYLOOP
+				}
 				t.Errorf("Failed to process param handler %s for hand %s", err.Error(), key)
+				continue
 			}
 			got := buf.String()
 			if got != expect.Output {
 				t.Errorf("Failed to get parameter help %s expected %s got %s", key, expect.Output, got)
+				continue KEYLOOP
 			}
 			// TODO: Сделать проверку урлов
+			if err != expect.Err {
+				t.Errorf("No error in test expected %v got %v", expect.Err, err)
+				continue KEYLOOP
+			}
 		}
 	}
 }

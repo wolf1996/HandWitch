@@ -3,7 +3,6 @@ package core
 import (
 	"errors"
 	"fmt"
-	"html/template"
 	"io"
 	"net/http"
 )
@@ -65,7 +64,7 @@ var (
 )
 
 type UrlRecord struct {
-	UrlTemplate template.URL
+	UrlTemplate string
 	Parameters  ParamsDescription
 	Body        string
 	UrlName     string
@@ -81,7 +80,7 @@ type UrlProcessor struct {
 
 type HandProcessor interface {
 	WriteHelp(writer io.Writer) error
-	Process(writer io.Writer) error
+	Process(writer io.Writer, params map[string]interface{}) error
 	GetInfo() *UrlRecord
 	GetParam(string) (ParamProcessor, error)
 }
@@ -103,6 +102,5 @@ func (processor *UrlProcessor) GetHand(name string) (HandProcessor, error) {
 	if !ok {
 		return nil, NonExistentHandError
 	}
-	handProc := NewHandProcessor(&urlInfo)
-	return handProc, nil
+	return NewHandProcessor(&urlInfo, processor.httpClient)
 }

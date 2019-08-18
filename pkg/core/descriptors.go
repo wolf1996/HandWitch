@@ -1,32 +1,52 @@
 package core
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"sort"
+	"text/template"
 )
 
 type HandProcessorImp struct {
 	*UrlRecord
+	client *http.Client
 }
 
-func NewHandProcessor(rec *UrlRecord) HandProcessor {
-	imp := HandProcessorImp{rec}
-	return &imp
+func (processor *HandProcessorImp) compileTemplate(rec *UrlRecord, _ map[string]interface{}) (*template.Template, error) {
+
+	getValue := func(name string) string {
+		return ""
+	}
+	return template.New(rec.UrlName).Funcs(
+		template.FuncMap{
+			"GetValue": getValue,
+		},
+	).Parse(rec.Body)
+}
+
+func NewHandProcessor(rec *UrlRecord, client *http.Client) (HandProcessor, error) {
+	imp := HandProcessorImp{
+		UrlRecord: rec,
+		client:    client,
+	}
+	return &imp, nil
 }
 
 func (processor *HandProcessorImp) WriteHelp(writer io.Writer) error {
 	_, err := io.WriteString(writer, fmt.Sprintf("Name: %s\n", processor.UrlName))
 	if err != nil {
-		return err
+		return fmt.Errorf("Error while writing name %s", err.Error())
 	}
-	_, err = io.WriteString(writer, fmt.Sprintf("URL template: %s\n", string(processor.UrlTemplate)))
+	_, err = io.WriteString(writer, fmt.Sprintf("URL template: %s\n", processor.UrlTemplate))
 	if err != nil {
-		return err
+		return fmt.Errorf("Error while writing url template %s", err.Error())
 	}
 	_, err = io.WriteString(writer, fmt.Sprintf("Parameters:\n"))
 	if err != nil {
-		return err
+		return fmt.Errorf("Error while writing url parameters header %s", err.Error())
 	}
 	var keys []string
 	for key := range processor.UrlRecord.Parameters {
@@ -36,20 +56,48 @@ func (processor *HandProcessorImp) WriteHelp(writer io.Writer) error {
 	for _, key := range keys {
 		proc, _ := processor.GetParam(key)
 		if err != nil {
-			// TODO: Предположим что ошибок тут быть не может, но если есть
-			// падаем
-			return err
+			return fmt.Errorf("Error while writing get parameter help for key %s: %s", key, err.Error())
 		}
 		err = proc.WriteHelp(writer)
 		if err != nil {
-			return err
+			return fmt.Errorf("Error while writing parameters help for key %s: %s", key, err.Error())
 		}
 	}
 	return nil
 }
 
-func (*HandProcessorImp) Process(writer io.Writer) error {
-	return nil
+func (processor *HandProcessorImp) Process(writer io.Writer, params map[string]interface{}) error {
+	buf := new(bytes.Buffer)
+	tmp, err := template.New(processor.UrlName).Parse(processor.UrlTemplate)
+	if err != nil {
+		return fmt.Errorf("Failed to build url template %s", err.Error())
+	}
+	err = tmp.Execute(buf, params)
+	if err != nil {
+		return fmt.Errorf("Failed to build url %s", err.Error())
+	}
+	req, err := http.NewRequest("GET", buf.String(), nil)
+	if err != nil {
+		return fmt.Errorf("Failed to build request %s", err.Error())
+	}
+	responce, err := processor.client.Do(req)
+	data := make(map[string]interface{})
+	if err != nil {
+		return fmt.Errorf("Failed to read result %s", err.Error())
+	}
+	err = json.NewDecoder(responce.Body).Decode(&data)
+	if err != nil {
+		return fmt.Errorf("Failed to decode json result %s", err.Error())
+	}
+	template, err := processor.compileTemplate(processor.UrlRecord, params)
+	if err != nil {
+		return fmt.Errorf("Failed to build request %s", err.Error())
+	}
+	err = template.Lookup(processor.UrlRecord.UrlName).Execute(writer, data)
+	if err != nil {
+		return fmt.Errorf("Failed to execute %s", err.Error())
+	}
+	return err
 }
 
 func (*HandProcessorImp) GetInfo() *UrlRecord {
@@ -76,11 +124,11 @@ func NewParamProcessor(info ParamInfo) ParamProcessorImp {
 func (p *ParamProcessorImp) WriteHelp(writer io.Writer) error {
 	destination, err := p.Destination.ToString()
 	if err != nil {
-		return err
+		return fmt.Errorf("Error while destination help converting %s", err.Error())
 	}
 	typeStr, err := p.Type.ToString()
 	if err != nil {
-		return err
+		return fmt.Errorf("Error while Type help converting %s", err.Error())
 	}
 	res := fmt.Sprintf(
 		"%s(%s)\t%s\n\t%s\n",
