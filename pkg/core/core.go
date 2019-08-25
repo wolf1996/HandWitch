@@ -1,3 +1,4 @@
+// Package core provides base types for library usage
 package core
 
 import (
@@ -7,20 +8,25 @@ import (
 	"net/http"
 )
 
+// ParamDestination - type to represent where, the parameter
+// should be placed in query
+// In url - URL_PARAM
+// Like a query param - QUERY_PARAM
 type ParamDestination int
 
 const (
-	URL_PARAM ParamDestination = iota
-	QUERY_PARAM
+	UrlPlaced ParamDestination = iota
+	QueryPlaced
 )
 
+// Get String representation of ParamDestination
 func (dst ParamDestination) ToString() (string, error) {
 	switch dst {
-	case URL_PARAM:
+	case UrlPlaced:
 		{
 			return "URL Param", nil
 		}
-	case QUERY_PARAM:
+	case QueryPlaced:
 		{
 			return "Query Param", nil
 		}
@@ -28,20 +34,21 @@ func (dst ParamDestination) ToString() (string, error) {
 	return "", fmt.Errorf("Wrong parameter destination %d", dst)
 }
 
+// Param type representations
 type ParamType int
 
 const (
-	INTEGER ParamType = iota
-	STRING
+	IntegerType ParamType = iota
+	StringType
 )
 
 func (tp ParamType) ToString() (string, error) {
 	switch tp {
-	case INTEGER:
+	case IntegerType:
 		{
 			return "Integer", nil
 		}
-	case STRING:
+	case StringType:
 		{
 			return "String", nil
 		}
@@ -59,8 +66,7 @@ type ParamInfo struct {
 type ParamsDescription map[string]ParamInfo
 
 var (
-	NonExistentHandError  = errors.New("Can't Find key")
-	NonExistentParamError = errors.New("Can't Find param")
+	ErrNonExistentParam = errors.New("Can't Find param")
 )
 
 type UrlRecord struct {
@@ -74,7 +80,7 @@ type UrlRecord struct {
 type UrlContrainer map[string]UrlRecord
 
 type UrlProcessor struct {
-	container  UrlContrainer
+	container  DescriptionsSource
 	httpClient *http.Client
 }
 
@@ -90,7 +96,7 @@ type ParamProcessor interface {
 	GetInfo() ParamInfo
 }
 
-func NewUrlProcessor(container UrlContrainer, httpClient *http.Client) UrlProcessor {
+func NewUrlProcessor(container DescriptionsSource, httpClient *http.Client) UrlProcessor {
 	return UrlProcessor{
 		container:  container,
 		httpClient: httpClient,
@@ -98,9 +104,9 @@ func NewUrlProcessor(container UrlContrainer, httpClient *http.Client) UrlProces
 }
 
 func (processor *UrlProcessor) GetHand(name string) (HandProcessor, error) {
-	urlInfo, ok := processor.container[name]
-	if !ok {
-		return nil, NonExistentHandError
+	urlInfo, err := processor.container.GetByName(name)
+	if err != nil {
+		return nil, err
 	}
-	return NewHandProcessor(&urlInfo, processor.httpClient)
+	return NewHandProcessor(urlInfo, processor.httpClient)
 }

@@ -107,7 +107,7 @@ func (*HandProcessorImp) GetInfo() *UrlRecord {
 func (imp *HandProcessorImp) GetParam(paramName string) (ParamProcessor, error) {
 	paramValue, ok := imp.Parameters[paramName]
 	if !ok {
-		return nil, NonExistentParamError
+		return nil, ErrNonExistentParam
 	}
 	param := NewParamProcessor(paramValue)
 	return &param, nil
