@@ -10,19 +10,21 @@ import (
 
 // ParamDestination - type to represent where, the parameter
 // should be placed in query
-// In url - URL_PARAM
+// In URL - URL_PARAM
 // Like a query param - QUERY_PARAM
-type ParamDestination int
+type ParamDestination string
 
 const (
-	UrlPlaced ParamDestination = iota
-	QueryPlaced
+	//URLPlaced hand is part of url path
+	URLPlaced ParamDestination = "URL"
+	//QueryPlaced query parameter
+	QueryPlaced ParamDestination = "query"
 )
 
-// Get String representation of ParamDestination
+// ToString Get String representation of ParamDestination
 func (dst ParamDestination) ToString() (string, error) {
 	switch dst {
-	case UrlPlaced:
+	case URLPlaced:
 		{
 			return "URL Param", nil
 		}
@@ -31,17 +33,20 @@ func (dst ParamDestination) ToString() (string, error) {
 			return "Query Param", nil
 		}
 	}
-	return "", fmt.Errorf("Wrong parameter destination %d", dst)
+	return "", fmt.Errorf("Wrong parameter destination %s", dst)
 }
 
-// Param type representations
-type ParamType int
+// ParamType Param type representations
+type ParamType string
 
 const (
-	IntegerType ParamType = iota
-	StringType
+	//IntegerType param represented as an integer
+	IntegerType ParamType = "integer"
+	//StringType param represented as a string
+	StringType ParamType = "string"
 )
 
+//ToString Get human-readable String representation
 func (tp ParamType) ToString() (string, error) {
 	switch tp {
 	case IntegerType:
@@ -53,60 +58,70 @@ func (tp ParamType) ToString() (string, error) {
 			return "String", nil
 		}
 	}
-	return "", fmt.Errorf("Wrong parameter type %d", tp)
+	return "", fmt.Errorf("Wrong parameter type %s", tp)
 }
 
+//ParamInfo Config parameter description
 type ParamInfo struct {
-	Help        string
-	Name        string
-	Destination ParamDestination
-	Type        ParamType
+	Help        string           `json:"help"`
+	Name        string           `json:"name"`
+	Destination ParamDestination `json:"destination"`
+	Type        ParamType        `json:"type"`
 }
 
+//ParamsDescription Container for param
 type ParamsDescription map[string]ParamInfo
 
 var (
+	// ErrNonExistentParam don't requested param
 	ErrNonExistentParam = errors.New("Can't Find param")
 )
 
-type UrlRecord struct {
-	UrlTemplate string
-	Parameters  ParamsDescription
-	Body        string
-	UrlName     string
-	Help        string
+//URLRecord Full Hand description in configuration file
+type URLRecord struct {
+	URLTemplate string            `json:"URL_template"`
+	Parameters  ParamsDescription `json:"params"`
+	Body        string            `json:"body"`
+	URLName     string            `json:"name"`
+	Help        string            `json:"help"`
 }
 
-type UrlContrainer map[string]UrlRecord
+//URLContrainer Container of all URLs
+type URLContrainer map[string]URLRecord
 
-type UrlProcessor struct {
+//URLProcessor url processor
+type URLProcessor struct {
 	container  DescriptionsSource
 	httpClient *http.Client
 }
 
+//HandProcessor hand processor
 type HandProcessor interface {
 	WriteHelp(writer io.Writer) error
 	Process(writer io.Writer, params map[string]interface{}) error
-	GetInfo() *UrlRecord
+	GetInfo() *URLRecord
 	GetParam(string) (ParamProcessor, error)
 }
 
+//ParamProcessor param processor handles param descriptions
 type ParamProcessor interface {
 	WriteHelp(writer io.Writer) error
 	GetInfo() ParamInfo
 }
 
-func NewUrlProcessor(container DescriptionsSource, httpClient *http.Client) UrlProcessor {
-	return UrlProcessor{
+//NewURLProcessor creates new url processor, using data source and http client
+func NewURLProcessor(container DescriptionsSource, httpClient *http.Client) URLProcessor {
+	return URLProcessor{
 		container:  container,
 		httpClient: httpClient,
 	}
 }
 
-func (processor *UrlProcessor) GetHand(name string) (HandProcessor, error) {
-	urlInfo, err := processor.container.GetByName(name)
+//GetHand build hand processor object by name
+func (processor *URLProcessor) GetHand(name string) (HandProcessor, error) {
+	URLInfo, err := processor.container.GetByName(name)
 	if err != nil {
 		return nil, err
 	}
-	return NewHandProcessor(urlInfo, processor.httpClient)
+	return NewHandProcessor(URLInfo, processor.httpClient)
 }

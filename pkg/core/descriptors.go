@@ -10,46 +10,49 @@ import (
 	"text/template"
 )
 
+//HandProcessorImp hand processor implementation
 type HandProcessorImp struct {
-	*UrlRecord
+	*URLRecord
 	client *http.Client
 }
 
-func (processor *HandProcessorImp) compileTemplate(rec *UrlRecord, _ map[string]interface{}) (*template.Template, error) {
+func (processor *HandProcessorImp) compileTemplate(rec *URLRecord, _ map[string]interface{}) (*template.Template, error) {
 
 	getValue := func(name string) string {
 		return ""
 	}
-	return template.New(rec.UrlName).Funcs(
+	return template.New(rec.URLName).Funcs(
 		template.FuncMap{
 			"GetValue": getValue,
 		},
 	).Parse(rec.Body)
 }
 
-func NewHandProcessor(rec *UrlRecord, client *http.Client) (HandProcessor, error) {
+//NewHandProcessor build hand processor to current data
+func NewHandProcessor(rec *URLRecord, client *http.Client) (HandProcessor, error) {
 	imp := HandProcessorImp{
-		UrlRecord: rec,
+		URLRecord: rec,
 		client:    client,
 	}
 	return &imp, nil
 }
 
+//WriteHelp write help to current data
 func (processor *HandProcessorImp) WriteHelp(writer io.Writer) error {
-	_, err := io.WriteString(writer, fmt.Sprintf("Name: %s\n", processor.UrlName))
+	_, err := io.WriteString(writer, fmt.Sprintf("Name: %s\n", processor.URLName))
 	if err != nil {
 		return fmt.Errorf("Error while writing name %s", err.Error())
 	}
-	_, err = io.WriteString(writer, fmt.Sprintf("URL template: %s\n", processor.UrlTemplate))
+	_, err = io.WriteString(writer, fmt.Sprintf("URL template: %s\n", processor.URLTemplate))
 	if err != nil {
-		return fmt.Errorf("Error while writing url template %s", err.Error())
+		return fmt.Errorf("Error while writing URL template %s", err.Error())
 	}
 	_, err = io.WriteString(writer, fmt.Sprintf("Parameters:\n"))
 	if err != nil {
-		return fmt.Errorf("Error while writing url parameters header %s", err.Error())
+		return fmt.Errorf("Error while writing URL parameters header %s", err.Error())
 	}
 	var keys []string
-	for key := range processor.UrlRecord.Parameters {
+	for key := range processor.URLRecord.Parameters {
 		keys = append(keys, key)
 	}
 	sort.Strings(keys)
@@ -66,15 +69,17 @@ func (processor *HandProcessorImp) WriteHelp(writer io.Writer) error {
 	return nil
 }
 
+//Process load data from hand url and
+//execute template with it
 func (processor *HandProcessorImp) Process(writer io.Writer, params map[string]interface{}) error {
 	buf := new(bytes.Buffer)
-	tmp, err := template.New(processor.UrlName).Parse(processor.UrlTemplate)
+	tmp, err := template.New(processor.URLName).Parse(processor.URLTemplate)
 	if err != nil {
-		return fmt.Errorf("Failed to build url template %s", err.Error())
+		return fmt.Errorf("Failed to build URL template %s", err.Error())
 	}
 	err = tmp.Execute(buf, params)
 	if err != nil {
-		return fmt.Errorf("Failed to build url %s", err.Error())
+		return fmt.Errorf("Failed to build URL %s", err.Error())
 	}
 	req, err := http.NewRequest("GET", buf.String(), nil)
 	if err != nil {
@@ -89,23 +94,25 @@ func (processor *HandProcessorImp) Process(writer io.Writer, params map[string]i
 	if err != nil {
 		return fmt.Errorf("Failed to decode json result %s", err.Error())
 	}
-	template, err := processor.compileTemplate(processor.UrlRecord, params)
+	template, err := processor.compileTemplate(processor.URLRecord, params)
 	if err != nil {
 		return fmt.Errorf("Failed to build request %s", err.Error())
 	}
-	err = template.Lookup(processor.UrlRecord.UrlName).Execute(writer, data)
+	err = template.Lookup(processor.URLRecord.URLName).Execute(writer, data)
 	if err != nil {
 		return fmt.Errorf("Failed to execute %s", err.Error())
 	}
 	return err
 }
 
-func (*HandProcessorImp) GetInfo() *UrlRecord {
+//GetInfo get row data
+func (*HandProcessorImp) GetInfo() *URLRecord {
 	return nil
 }
 
-func (imp *HandProcessorImp) GetParam(paramName string) (ParamProcessor, error) {
-	paramValue, ok := imp.Parameters[paramName]
+//GetParam get parametere handler
+func (processor *HandProcessorImp) GetParam(paramName string) (ParamProcessor, error) {
+	paramValue, ok := processor.Parameters[paramName]
 	if !ok {
 		return nil, ErrNonExistentParam
 	}
@@ -113,14 +120,17 @@ func (imp *HandProcessorImp) GetParam(paramName string) (ParamProcessor, error) 
 	return &param, nil
 }
 
+//ParamProcessorImp implemet
 type ParamProcessorImp struct {
 	ParamInfo
 }
 
+//NewParamProcessor build new parameter processor by info
 func NewParamProcessor(info ParamInfo) ParamProcessorImp {
 	return ParamProcessorImp{info}
 }
 
+//WriteHelp writs help
 func (p *ParamProcessorImp) WriteHelp(writer io.Writer) error {
 	destination, err := p.Destination.ToString()
 	if err != nil {
@@ -141,6 +151,7 @@ func (p *ParamProcessorImp) WriteHelp(writer io.Writer) error {
 	return err
 }
 
-func (imp *ParamProcessorImp) GetInfo() ParamInfo {
-	return imp.ParamInfo
+//GetInfo get raw info
+func (p *ParamProcessorImp) GetInfo() ParamInfo {
+	return p.ParamInfo
 }

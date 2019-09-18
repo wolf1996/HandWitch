@@ -42,9 +42,9 @@ func TestParametersList(t *testing.T) {
 	testCases := TestDescriptions{
 		TestDescription{
 			TestInput{
-				NewDescriptionSourceFromDict(UrlContrainer{
+				NewDescriptionSourceFromDict(URLContrainer{
 					"hand1": {
-						UrlTemplate: "",
+						URLTemplate: "",
 						Parameters: ParamsDescription{
 							"Name1": ParamInfo{
 								Name:        "Name1",
@@ -56,11 +56,11 @@ func TestParametersList(t *testing.T) {
 								Name:        "Name2",
 								Help:        "Help to Name2",
 								Type:        StringType,
-								Destination: UrlPlaced,
+								Destination: URLPlaced,
 							},
 						},
 						Body:    "",
-						UrlName: "name",
+						URLName: "name",
 					},
 				}),
 				nil,
@@ -80,7 +80,7 @@ func TestParametersList(t *testing.T) {
 	for _, testCase := range testCases {
 		input := testCase.Inp
 		output := testCase.Out
-		processor := NewUrlProcessor(input.Descriptions, nil)
+		processor := NewURLProcessor(input.Descriptions, nil)
 		for _, outCase := range output {
 			out := outCase.(TestOutputParamHelp)
 			handDescr, err := processor.GetHand(out.HandName)
@@ -115,21 +115,21 @@ func TestHelp(t *testing.T) {
 		TestDescription{
 			TestInput{
 				NewDescriptionSourceFromDict(
-					UrlContrainer{
+					URLContrainer{
 						"hand1": { // Присутствуют параметры всех типов
-							UrlTemplate: "http://example.com/entity/{entity_id}/v/{v}",
+							URLTemplate: "http://example.com/entity/{entity_id}/v/{v}",
 							Parameters: ParamsDescription{
 								"entity_id": ParamInfo{
 									Name:        "entity_id",
 									Help:        "Help to entity_id",
 									Type:        IntegerType,
-									Destination: UrlPlaced,
+									Destination: URLPlaced,
 								},
 								"v": ParamInfo{
 									Name:        "v",
 									Help:        "Help to v",
 									Type:        StringType,
-									Destination: UrlPlaced,
+									Destination: URLPlaced,
 								},
 								"QueryParam1": ParamInfo{
 									Name:        "QueryParam1",
@@ -145,10 +145,10 @@ func TestHelp(t *testing.T) {
 								},
 							},
 							Body:    "",
-							UrlName: "hand1",
+							URLName: "hand1",
 						},
-						"handNoUrlParams": { // Только параметры подставляемые как query
-							UrlTemplate: "http://example.com/entity",
+						"handNoURLParams": { // Только параметры подставляемые как query
+							URLTemplate: "http://example.com/entity",
 							Parameters: ParamsDescription{
 								"QueryParam1": ParamInfo{
 									Name:        "QueryParam1",
@@ -164,32 +164,32 @@ func TestHelp(t *testing.T) {
 								},
 							},
 							Body:    "",
-							UrlName: "handNoUrlParams",
+							URLName: "handNoURLParams",
 						},
-						"handNoQueryParams": { // Только параметры подставляемые в url
-							UrlTemplate: "http://example.com/entity/{entity_id}/v/{v}",
+						"handNoQueryParams": { // Только параметры подставляемые в URL
+							URLTemplate: "http://example.com/entity/{entity_id}/v/{v}",
 							Parameters: ParamsDescription{
 								"entity_id": ParamInfo{
 									Name:        "entity_id",
 									Help:        "Help to entity_id",
 									Type:        IntegerType,
-									Destination: UrlPlaced,
+									Destination: URLPlaced,
 								},
 								"v": ParamInfo{
 									Name:        "v",
 									Help:        "Help to v",
 									Type:        StringType,
-									Destination: UrlPlaced,
+									Destination: URLPlaced,
 								},
 							},
 							Body:    "",
-							UrlName: "handNoQueryParams",
+							URLName: "handNoQueryParams",
 						},
 						"handNoParams": {
-							UrlTemplate: "http://example.com/entity/",
+							URLTemplate: "http://example.com/entity/",
 							Parameters:  ParamsDescription{},
 							Body:        "",
-							UrlName:     "handNoParams",
+							URLName:     "handNoParams",
 						},
 					},
 				),
@@ -207,8 +207,8 @@ func TestHelp(t *testing.T) {
 						"v(String)\tURL Param\n\tHelp to v\n",
 				},
 				TestOutput{
-					HandName: "handNoUrlParams",
-					Output: "Name: handNoUrlParams\n" +
+					HandName: "handNoURLParams",
+					Output: "Name: handNoURLParams\n" +
 						"URL template: http://example.com/entity\n" +
 						"Parameters:\n" +
 						"QueryParam1(Integer)\tQuery Param\n\tHelp to QueryParam1\n" +
@@ -228,7 +228,7 @@ func TestHelp(t *testing.T) {
 	for _, testCase := range testCases {
 		input := testCase.Inp
 		output := testCase.Out
-		processor := NewUrlProcessor(input.Descriptions, nil)
+		processor := NewURLProcessor(input.Descriptions, nil)
 		for _, valI := range output {
 			val := valI.(TestOutput)
 			buf := new(bytes.Buffer)
@@ -250,8 +250,8 @@ func TestHelp(t *testing.T) {
 
 func TestRender(t *testing.T) {
 	// Проверяем как строится результат по запросу данных с ручки
-	mustBuildRequest := func(method string, url string) *http.Request {
-		req, err := http.NewRequest(method, url, nil)
+	mustBuildRequest := func(method string, URL string) *http.Request {
+		req, err := http.NewRequest(method, URL, nil)
 		if err != nil {
 			panic(fmt.Sprintf("Failed to build request %s", err.Error()))
 		}
@@ -273,21 +273,21 @@ func TestRender(t *testing.T) {
 		TestDescription{
 			TestInput{
 				NewDescriptionSourceFromDict(
-					UrlContrainer{
+					URLContrainer{
 						"hand1": {
-							UrlTemplate: fmt.Sprintf("%s/entity/{entity_id}/v/{v}", serv.URL),
+							URLTemplate: fmt.Sprintf("%s/entity/{entity_id}/v/{v}", serv.URL),
 							Parameters: ParamsDescription{
 								"entity_id": ParamInfo{
 									Name:        "entity_id",
 									Help:        "Help to entity_id",
 									Type:        IntegerType,
-									Destination: UrlPlaced,
+									Destination: URLPlaced,
 								},
 								"v": ParamInfo{
 									Name:        "v",
 									Help:        "Help to v",
 									Type:        StringType,
-									Destination: UrlPlaced,
+									Destination: URLPlaced,
 								},
 								"QueryParam1": ParamInfo{
 									Name:        "QueryParam1",
@@ -303,7 +303,7 @@ func TestRender(t *testing.T) {
 								},
 							},
 							Body:    "Value of Value is {{ .value }}",
-							UrlName: "ValuableName",
+							URLName: "ValuableName",
 						},
 					},
 				),
@@ -338,7 +338,7 @@ func TestRender(t *testing.T) {
 		input := testCase.Inp
 		output := testCase.Out
 		handler = input.Handler
-		processor := NewUrlProcessor(input.Descriptions, serv.Client())
+		processor := NewURLProcessor(input.Descriptions, serv.Client())
 	KEYLOOP:
 		for _, expectI := range output {
 			expect := expectI.(TestOutput)
