@@ -8,12 +8,14 @@ import (
 	"github.com/wolf1996/HandWitch/pkg/core"
 )
 
+// Bot создаёт общий интерфейс для бота
 type Bot struct {
 	api *tgbotapi.BotAPI
-	app *core.UrlContrainer
+	app *core.URLContrainer
 }
 
-func NewBot(client *http.Client, token string, app *core.UrlContrainer) (*Bot, error) {
+// NewBot создаёт новый инстанс бота
+func NewBot(client *http.Client, token string, app *core.URLContrainer) (*Bot, error) {
 	bot, err := tgbotapi.NewBotAPIWithClient(token, client)
 	if err != nil {
 		log.Panic(err)
@@ -25,6 +27,7 @@ func NewBot(client *http.Client, token string, app *core.UrlContrainer) (*Bot, e
 	}, nil
 }
 
+// Listen слушаем сообщения и отправляем ответ
 func (b *Bot) Listen() error {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
