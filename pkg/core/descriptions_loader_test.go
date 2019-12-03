@@ -1,6 +1,8 @@
 package core
 
 import (
+	"fmt"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -10,12 +12,27 @@ type DescriptionParsingResults struct {
 	Err       error
 }
 
+func cmpHandlers(container URLContrainer, dataSource DescriptionsSource) (bool, string) {
+	for name, handler := range container {
+		handlerRes, err := dataSource.GetByName(name)
+		if err != nil {
+			return false, fmt.Sprintf("On name %s: Got an unexpected error %s", name, err.Error())
+		}
+		if !reflect.DeepEqual(*handlerRes, handler) {
+			return false, fmt.Sprintf("On name %s: \n Expected: \n %v \n\n Got:\n %v", name, handler, *handlerRes)
+		}
+	}
+	return true, ""
+}
+
 func TestDescriptionsLoader(t *testing.T) {
 	testCases := []struct {
 		Input  string
+		Name   string
 		Output DescriptionParsingResults
 	}{
 		{
+			Name: "simple result",
 			Input: `{
 				"hand1":{
 				   "URL_template":"https://bash.im/entity/{entity_id}/v/{v}",
@@ -51,14 +68,46 @@ func TestDescriptionsLoader(t *testing.T) {
 				}
 			 }`,
 			Output: DescriptionParsingResults{
-				Container: URLContrainer{},
-				Err:       nil,
+				Container: URLContrainer{
+					"hand1": {
+						URLTemplate: fmt.Sprintf("%s/entity/{entity_id}/v/{v}", "https://bash.im"),
+						Parameters: ParamsDescription{
+							"entity_id": ParamInfo{
+								Name:        "entity_id",
+								Help:        "Help to entity_id",
+								Type:        IntegerType,
+								Destination: URLPlaced,
+							},
+							"v": ParamInfo{
+								Name:        "v",
+								Help:        "Help to v",
+								Type:        StringType,
+								Destination: URLPlaced,
+							},
+							"QueryParam1": ParamInfo{
+								Name:        "QueryParam1",
+								Help:        "Help to QueryParam1",
+								Type:        IntegerType,
+								Destination: QueryPlaced,
+							},
+							"QueryParam2": ParamInfo{
+								Name:        "QueryParam2",
+								Help:        "Help to QueryParam2",
+								Type:        StringType,
+								Destination: QueryPlaced,
+							},
+						},
+						Body:    "Value of Value is {{ .value }}",
+						URLName: "ValuableName",
+					},
+				},
+				Err: nil,
 			},
 		},
 	}
 	for _, testCase := range testCases {
 		reader := strings.NewReader(testCase.Input)
-		_, errResult := ReadJSON(reader)
+		result, errResult := ReadJSON(reader)
 		if (errResult != nil) != (testCase.Output.Err != nil) {
 			safeErrorPrint := func(errOut error) string {
 				if errOut == nil {
@@ -66,7 +115,11 @@ func TestDescriptionsLoader(t *testing.T) {
 				}
 				return errOut.Error()
 			}
-			t.Errorf("Not equal errors, got %s, expected %s", safeErrorPrint(errResult), safeErrorPrint(testCase.Output.Err))
+			t.Errorf("%s: Not equal errors, got %s, expected %s", testCase.Name, safeErrorPrint(errResult), safeErrorPrint(testCase.Output.Err))
+		}
+
+		if ok, msg := cmpHandlers(testCase.Output.Container, result); !ok {
+			t.Errorf("%s: error on results comparision %s", testCase.Name, msg)
 		}
 	}
 }

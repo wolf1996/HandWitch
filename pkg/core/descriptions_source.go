@@ -29,7 +29,7 @@ func (source *SimpleDescriptionsSource) GetByName(name string) (*URLRecord, erro
 }
 
 //NewDescriptionSourceFromDict get simple descriprion source with data from map
-func NewDescriptionSourceFromDict(URLsDict map[string]URLRecord) DescriptionsSource {
+func NewDescriptionSourceFromDict(URLsDict map[string]URLRecord) *SimpleDescriptionsSource {
 	return &SimpleDescriptionsSource{
 		descriptions: URLsDict,
 	}

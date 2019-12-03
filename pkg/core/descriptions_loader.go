@@ -7,7 +7,7 @@ import (
 )
 
 // ReadJSON получить из json описание ручек
-func ReadJSON(reader io.Reader) (DescriptionsSource, error) {
+func ReadJSON(reader io.Reader) (*SimpleDescriptionsSource, error) {
 	var urlContainer URLContrainer
 	bytes, err := ioutil.ReadAll(reader)
 	if err != nil {
