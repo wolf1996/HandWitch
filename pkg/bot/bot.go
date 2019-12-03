@@ -46,7 +46,10 @@ func (b *Bot) Listen() error {
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, update.Message.Text)
 		msg.ReplyToMessageID = update.Message.MessageID
 
-		b.api.Send(msg)
+		_, err = b.api.Send(msg)
+		if err != nil {
+			log.Printf("Error on sending message %s", err.Error())
+		}
 	}
 	return nil
 }

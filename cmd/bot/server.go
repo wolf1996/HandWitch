@@ -16,5 +16,11 @@ func main() {
 		log.Fatalf("Failed %s", err.Error())
 	}
 	botInstance, err := bot.NewBot(client, token, nil)
-	botInstance.Listen()
+	if err != nil {
+		log.Fatalf("Failed tto create bot %s", err.Error())
+	}
+	err = botInstance.Listen()
+	if err != nil {
+		log.Fatalf("Failed on listen %s", err.Error())
+	}
 }
