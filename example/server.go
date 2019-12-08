@@ -43,7 +43,9 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	_, err = w.Write(rsp)
-	log.Printf("Failed to write responce %s", err.Error())
+	if err != nil {
+		log.Printf("Failed to write responce %s", err.Error())
+	}
 }
 
 func main() {
