@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"sort"
+	"strconv"
 	"text/template"
 )
 
@@ -69,6 +70,20 @@ func (processor *HandProcessorImp) WriteHelp(writer io.Writer) error {
 	return nil
 }
 
+func (processor *HandProcessorImp) addQueryParams(req *http.Request, params map[string]interface{}) {
+	qry := req.URL.Query()
+	for name, description := range processor.URLRecord.Parameters {
+		if description.Destination == QueryPlaced {
+			//TODO: add reflection?
+			val, ok := params[name]
+			if ok {
+				qry.Add(name, fmt.Sprintf("%v", val))
+			}
+		}
+	}
+	req.URL.RawQuery = qry.Encode()
+}
+
 //Process load data from hand url and
 //execute template with it
 func (processor *HandProcessorImp) Process(writer io.Writer, params map[string]interface{}) error {
@@ -85,6 +100,7 @@ func (processor *HandProcessorImp) Process(writer io.Writer, params map[string]i
 	if err != nil {
 		return fmt.Errorf("Failed to build request %s", err.Error())
 	}
+	processor.addQueryParams(req, params)
 	responce, err := processor.client.Do(req)
 	data := make(map[string]interface{})
 	if err != nil {
@@ -154,4 +170,16 @@ func (p *ParamProcessorImp) WriteHelp(writer io.Writer) error {
 //GetInfo get raw info
 func (p *ParamProcessorImp) GetInfo() ParamInfo {
 	return p.ParamInfo
+}
+
+//ParseFromString get param value from string
+func (p *ParamProcessorImp) ParseFromString(str string) (interface{}, error) {
+	switch p.Type {
+	case StringType:
+		return str, nil
+	case IntegerType:
+		return strconv.Atoi(str)
+	}
+	//TODO: make a new good errors
+	return nil, fmt.Errorf("Unknown type %s", p.Type)
 }

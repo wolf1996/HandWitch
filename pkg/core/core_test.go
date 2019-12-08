@@ -327,7 +327,7 @@ func TestRender(t *testing.T) {
 					},
 					Output: "Value of Value is ValueForValue",
 					Requests: []*http.Request{
-						mustBuildRequest("GET", fmt.Sprintf("%s/entity/{entity_id}/v/{v}", serv.URL)),
+						mustBuildRequest("GET", fmt.Sprintf("%s/entity/1/v/a?QueryParam1=2&QueryParam2=b", serv.URL)),
 					},
 					Err: nil,
 				},

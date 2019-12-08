@@ -105,6 +105,7 @@ type HandProcessor interface {
 
 //ParamProcessor param processor handles param descriptions
 type ParamProcessor interface {
+	ParseFromString(str string) (interface{}, error)
 	WriteHelp(writer io.Writer) error
 	GetInfo() ParamInfo
 }

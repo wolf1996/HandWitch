@@ -107,7 +107,7 @@ func TestDescriptionsLoader(t *testing.T) {
 	}
 	for _, testCase := range testCases {
 		reader := strings.NewReader(testCase.Input)
-		result, errResult := ReadJSON(reader)
+		result, errResult := GetDescriptionSourceFromJSON(reader)
 		if (errResult != nil) != (testCase.Output.Err != nil) {
 			safeErrorPrint := func(errOut error) string {
 				if errOut == nil {

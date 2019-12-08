@@ -1,6 +1,8 @@
 package core
 
-import "errors"
+import (
+	"errors"
+)
 
 //DescriptionsSource DescriptionsSource get URL record by name
 type DescriptionsSource interface {
