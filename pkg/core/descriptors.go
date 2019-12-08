@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
+	"net/http/httputil"
 	"sort"
 	"strconv"
 	"text/template"
@@ -96,16 +98,31 @@ func (processor *HandProcessorImp) Process(writer io.Writer, params map[string]i
 	if err != nil {
 		return fmt.Errorf("Failed to build URL %s", err.Error())
 	}
+	log.Printf("Got URL %s", buf.String())
 	req, err := http.NewRequest("GET", buf.String(), nil)
 	if err != nil {
 		return fmt.Errorf("Failed to build request %s", err.Error())
 	}
 	processor.addQueryParams(req, params)
+	log.Printf("Got request %s", func() string {
+		bytes, err := httputil.DumpRequest(req, true)
+		if err != nil {
+			return err.Error()
+		}
+		return string(bytes)
+	}())
 	responce, err := processor.client.Do(req)
-	data := make(map[string]interface{})
 	if err != nil {
 		return fmt.Errorf("Failed to read result %s", err.Error())
 	}
+	log.Printf("Got responce %s", func() string {
+		bytes, err := httputil.DumpResponse(responce, true)
+		if err != nil {
+			return err.Error()
+		}
+		return string(bytes)
+	}())
+	data := make(map[string]interface{})
 	err = json.NewDecoder(responce.Body).Decode(&data)
 	if err != nil {
 		return fmt.Errorf("Failed to decode json result %s", err.Error())
