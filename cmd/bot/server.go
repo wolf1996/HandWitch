@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 
+	"flag"
 	bot "github.com/wolf1996/HandWitch/pkg/bot"
 	"github.com/wolf1996/HandWitch/pkg/core"
 	"net/http"
@@ -26,19 +27,27 @@ func getDescriptionSourceFromFile(path string) (*core.URLProcessor, error) {
 }
 
 func main() {
-	token := os.Args[1]
-	proxy := os.Args[2]
-	path := os.Args[3]
-
-	client, err := bot.GetClientWithProxy(proxy)
+	token := flag.String("token", "", "telegramm token")
+	proxy := flag.String("proxy", "", "proxy to telegram")
+	path := flag.String("path", "", "path to descriptions")
+	flag.Parse()
+	var err error
+	client := http.DefaultClient
+	if *proxy != "" {
+		log.Printf("Got Proxy %s", *proxy)
+		client, err = bot.GetClientWithProxy(*proxy)
+	} else {
+		log.Print("Got No Proxy")
+	}
 	if err != nil {
 		log.Fatalf("Failed %s", err.Error())
 	}
-	urlContainer, err := getDescriptionSourceFromFile(path)
+	log.Printf("Description file path used %s", *path)
+	urlContainer, err := getDescriptionSourceFromFile(*path)
 	if err != nil {
 		log.Fatalf("Failed to get description source file %s", err.Error())
 	}
-	botInstance, err := bot.NewBot(client, token, *urlContainer)
+	botInstance, err := bot.NewBot(client, *token, *urlContainer)
 	if err != nil {
 		log.Fatalf("Failed tto create bot %s", err.Error())
 	}
