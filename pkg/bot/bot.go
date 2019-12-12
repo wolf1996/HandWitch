@@ -16,20 +16,24 @@ import (
 
 // Bot создаёт общий интерфейс для бота
 type Bot struct {
-	api *tgbotapi.BotAPI
-	app core.URLProcessor
+	api  *tgbotapi.BotAPI
+	app  core.URLProcessor
+	auth Authorisation
 }
 
+//TODO: проверить каноничность
+
 // NewBot создаёт новый инстанс бота
-func NewBot(client *http.Client, token string, app core.URLProcessor) (*Bot, error) {
+func NewBot(client *http.Client, token string, app core.URLProcessor, auth Authorisation) (*Bot, error) {
 	bot, err := tgbotapi.NewBotAPIWithClient(token, client)
 	if err != nil {
 		log.Panic(err)
 	}
 	log.Printf("Authorized on account %s", bot.Self.UserName)
 	return &Bot{
-		api: bot,
-		app: app,
+		api:  bot,
+		app:  app,
+		auth: auth,
 	}, nil
 }
 
@@ -101,6 +105,14 @@ func (b *Bot) handleMessage(ctx context.Context, message *tgbotapi.Message) {
 	}
 }
 
+func (b *Bot) checkMessageAuth(message *tgbotapi.Message) (bool, error) {
+	role, err := b.auth.GetRoleByLogin(message.From.UserName)
+	if err != nil {
+		return false, err
+	}
+	return role == User, nil
+}
+
 // Listen слушаем сообщения и отправляем ответ
 func (b *Bot) Listen() error {
 	u := tgbotapi.NewUpdate(0)
@@ -116,6 +128,14 @@ func (b *Bot) Listen() error {
 		}
 		if !update.Message.IsCommand() {
 			// ignore non-Command  Updates
+			continue
+		}
+		allowed, err := b.checkMessageAuth(update.Message)
+		if err != nil {
+			log.Printf("Failed to check user role %s", err.Error())
+			continue;
+		}
+		if !allowed {
 			continue
 		}
 		log.Printf("Got message [%s] %s", update.Message.From.UserName, update.Message.Text)

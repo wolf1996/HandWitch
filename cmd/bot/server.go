@@ -47,7 +47,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to get description source file %s", err.Error())
 	}
-	botInstance, err := bot.NewBot(client, *token, *urlContainer)
+	botInstance, err := bot.NewBot(client, *token, *urlContainer, bot.DummyAuthorisation{})
 	if err != nil {
 		log.Fatalf("Failed tto create bot %s", err.Error())
 	}
