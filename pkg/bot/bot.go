@@ -29,7 +29,7 @@ func NewBot(client *http.Client, token string, app core.URLProcessor, auth Autho
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
-	log.Info("Authorized on account %s", bot.Self.UserName)
+	log.Infof("Authorized on account %s", bot.Self.UserName)
 	return &Bot{
 		api:  bot,
 		app:  app,
@@ -37,7 +37,7 @@ func NewBot(client *http.Client, token string, app core.URLProcessor, auth Autho
 	}, nil
 }
 
-func (b *Bot) processHand(ctx context.Context, writer io.Writer, messageArguments string) error {
+func (b *Bot) processHand(ctx context.Context, writer io.Writer, messageArguments string, logger *log.Entry) error {
 	if messageArguments == "" {
 		return fmt.Errorf("Empty arguments")
 	}
@@ -63,7 +63,7 @@ func (b *Bot) processHand(ctx context.Context, writer io.Writer, messageArgument
 		}
 		praramsMap[paramName] = value
 	}
-	return handProcessor.Process(ctx, writer, praramsMap)
+	return handProcessor.Process(ctx, writer, praramsMap, logger)
 }
 
 func (b *Bot) helpHand(ctx context.Context, writer io.Writer, messageArguments string) error {
@@ -77,31 +77,33 @@ func (b *Bot) helpHand(ctx context.Context, writer io.Writer, messageArguments s
 	return handProcessor.WriteHelp(writer)
 }
 
-func (b *Bot) executeMessage(ctx context.Context, writer io.Writer, message *tgbotapi.Message) error {
+func (b *Bot) executeMessage(ctx context.Context, writer io.Writer, message *tgbotapi.Message, logger *log.Entry) error {
 	switch message.Command() {
 	case "process":
-		return b.processHand(ctx, writer, message.CommandArguments())
+		logger.Debugf("found \"process\" command")
+		return b.processHand(ctx, writer, message.CommandArguments(), logger)
 	case "help":
+		logger.Debugf("found \"help\" command")
 		return b.helpHand(ctx, writer, message.CommandArguments())
 	}
 	return fmt.Errorf("Wrong comand %s", message.Command())
 }
 
-func (b *Bot) handleMessage(ctx context.Context, message *tgbotapi.Message) {
+func (b *Bot) handleMessage(ctx context.Context, message *tgbotapi.Message, logger *log.Entry) {
 	var resp bytes.Buffer
-	err := b.executeMessage(ctx, &resp, message)
+	err := b.executeMessage(ctx, &resp, message, logger)
 	if err != nil {
 		errmsg := fmt.Sprintf("Error on processing message %s: %s", message.Text, err.Error())
 		msg := tgbotapi.NewMessage(message.Chat.ID, errmsg)
 		_, err = b.api.Send(msg)
 		if err != nil {
-			log.Errorf("Error on sending message %s", err.Error())
+			logger.Errorf("Error on sending message %s", err.Error())
 		}
 	}
 	msg := tgbotapi.NewMessage(message.Chat.ID, resp.String())
 	_, err = b.api.Send(msg)
 	if err != nil {
-		log.Errorf("Error on sending message %s", err.Error())
+		logger.Errorf("Error on sending message %s", err.Error())
 	}
 }
 
@@ -113,29 +115,35 @@ func (b *Bot) checkMessageAuth(message *tgbotapi.Message) (bool, error) {
 	return role == User, nil
 }
 
-func (b *Bot) processUpdate(ctx context.Context, update tgbotapi.Update) {
+func (b *Bot) processUpdate(ctx context.Context, update tgbotapi.Update, logger *log.Entry) {
 	if update.Message == nil { // ignore any non-Message Updates
+		logger.Debugf("No message in update skipping")
 		return
 	}
 	if !update.Message.IsCommand() {
 		// ignore non-Command  Updates
+		logger.Debugf("No command in message update skipping")
 		return
 	}
 	allowed, err := b.checkMessageAuth(update.Message)
 	if err != nil {
-		log.Errorf("Failed to check user role %s", err.Error())
+		logger.Errorf("Failed to check user role %s", err.Error())
 		return
 	}
 	if !allowed {
-		log.Warn("User %s has a \"Guest\" role, ignore", update.Message.From.UserName)
+		logger.Warnf("User %s has a \"Guest\" role, ignore", update.Message.From.UserName)
 		return
 	}
-	log.Debug("Got message [%s] %s", update.Message.From.UserName, update.Message.Text)
-	go b.handleMessage(ctx, update.Message)
+	logger.Debugf("Got message [%s] %s", update.Message.From.UserName, update.Message.Text)
+	messageLogger := logger.WithFields(log.Fields{
+		"user_login":   update.Message.From.UserName,
+		"message_text": update.Message.Text,
+	})
+	go b.handleMessage(ctx, update.Message, messageLogger)
 }
 
 // Listen слушаем сообщения и отправляем ответ
-func (b *Bot) Listen(ctx context.Context) error {
+func (b *Bot) Listen(ctx context.Context, logger *log.Logger) error {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 
@@ -146,7 +154,7 @@ func (b *Bot) Listen(ctx context.Context) error {
 	for {
 		select {
 		case up := <-updates:
-			b.processUpdate(ctx, up)
+			b.processUpdate(ctx, up, log.NewEntry(logger))
 		case <-ctx.Done():
 			return ctx.Err()
 		}

@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type TestInput struct {
@@ -352,7 +354,7 @@ func TestRender(t *testing.T) {
 				t.Errorf("Failed to get param handler %s for hand %s", err.Error(), expect.HandName)
 				continue
 			}
-			err = handProcessor.Process(context.Background(), buf, expect.Inp)
+			err = handProcessor.Process(context.Background(), buf, expect.Inp, log.NewEntry(&log.Logger{}))
 			if err != nil {
 				if err != expect.Err {
 					continue KEYLOOP

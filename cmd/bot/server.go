@@ -60,7 +60,7 @@ func main() {
 	// из-за блокировок телеграмм даём возможность работы через прокси
 	client := http.DefaultClient
 	if *proxy != "" {
-		log.Info("Got Proxy %s", *proxy)
+		log.Infof("Got Proxy %s", *proxy)
 		client, err = bot.GetClientWithProxy(*proxy)
 		if err != nil {
 			log.Fatalf("Failed to create http client with proxy %s", err.Error())
@@ -107,12 +107,12 @@ func main() {
 
 	go func() {
 		signal := <-sysSignals
-		log.Info("Got %s system signal, aborting...", signal)
+		log.Infof("Got %s system signal, aborting...", signal)
 		cancel()
 	}()
 
-	err = botInstance.Listen(ctx)
+	err = botInstance.Listen(ctx, log.StandardLogger())
 	if err != nil {
-		log.Info("Stopping bot %s", err.Error())
+		log.Infof("Stopping bot %s", err.Error())
 	}
 }

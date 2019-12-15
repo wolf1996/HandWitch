@@ -90,7 +90,7 @@ func (processor *HandProcessorImp) addQueryParams(req *http.Request, params map[
 
 //Process load data from hand url and
 //execute template with it
-func (processor *HandProcessorImp) Process(ctx context.Context, writer io.Writer, params map[string]interface{}) error {
+func (processor *HandProcessorImp) Process(ctx context.Context, writer io.Writer, params map[string]interface{}, logger *log.Entry) error {
 	buf := new(bytes.Buffer)
 	tmp, err := template.New(processor.URLName).Parse(processor.URLTemplate)
 	if err != nil {
@@ -100,13 +100,13 @@ func (processor *HandProcessorImp) Process(ctx context.Context, writer io.Writer
 	if err != nil {
 		return fmt.Errorf("Failed to build URL %s", err.Error())
 	}
-	log.Debugf("Got URL %s", buf.String())
+	logger.Debugf("Got URL %s", buf.String())
 	req, err := http.NewRequestWithContext(ctx, "GET", buf.String(), nil)
 	if err != nil {
 		return fmt.Errorf("Failed to build request %s", err.Error())
 	}
 	processor.addQueryParams(req, params)
-	log.Debugf("Got request %s", func() string {
+	logger.Debugf("Got request %s", func() string {
 		bytes, err := httputil.DumpRequest(req, true)
 		if err != nil {
 			return err.Error()
@@ -117,7 +117,7 @@ func (processor *HandProcessorImp) Process(ctx context.Context, writer io.Writer
 	if err != nil {
 		return fmt.Errorf("Failed to read result %s", err.Error())
 	}
-	log.Debugf("Got responce %s", func() string {
+	logger.Debugf("Got responce %s", func() string {
 		bytes, err := httputil.DumpResponse(responce, true)
 		if err != nil {
 			return err.Error()

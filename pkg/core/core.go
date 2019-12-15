@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // ParamDestination - type to represent where, the parameter
@@ -99,7 +101,7 @@ type URLProcessor struct {
 //HandProcessor hand processor
 type HandProcessor interface {
 	WriteHelp(writer io.Writer) error
-	Process(ctx context.Context, writer io.Writer, params map[string]interface{}) error
+	Process(ctx context.Context, writer io.Writer, params map[string]interface{}, logger *log.Entry) error
 	GetInfo() *URLRecord
 	GetParam(string) (ParamProcessor, error)
 }
