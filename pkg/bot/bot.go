@@ -133,9 +133,10 @@ func (b *Bot) Listen() error {
 		allowed, err := b.checkMessageAuth(update.Message)
 		if err != nil {
 			log.Printf("Failed to check user role %s", err.Error())
-			continue;
+			continue
 		}
 		if !allowed {
+			log.Printf("User %s has a \"Guest\" role, ignore", update.Message.From.UserName)
 			continue
 		}
 		log.Printf("Got message [%s] %s", update.Message.From.UserName, update.Message.Text)

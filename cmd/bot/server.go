@@ -26,10 +26,24 @@ func getDescriptionSourceFromFile(path string) (*core.URLProcessor, error) {
 	return &processor, nil
 }
 
+func getAuthSourceFromFile(path string) (bot.Authorisation, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	reader := bufio.NewReader(file)
+	authSource, err := bot.GetAuthSourceFromJSON(reader)
+	if err != nil {
+		return nil, err
+	}
+	return authSource, err
+}
+
 func main() {
 	token := flag.String("token", "", "telegramm token")
 	proxy := flag.String("proxy", "", "proxy to telegram")
 	path := flag.String("path", "", "path to descriptions")
+	whiteListPath := flag.String("whitelist", "", "path to list of allowed users")
 	flag.Parse()
 	var err error
 	client := http.DefaultClient
@@ -39,6 +53,16 @@ func main() {
 	} else {
 		log.Print("Got No Proxy")
 	}
+	var auth bot.Authorisation
+	if *whiteListPath != "" {
+		auth, err = getAuthSourceFromFile(*whiteListPath)
+		if err != nil {
+			log.Fatalf("Failed to get auth %s, stop", err.Error())
+		}
+	} else {
+		auth = bot.DummyAuthorisation{}
+		log.Printf("No whitelist found starting with dummy auth")
+	}
 	if err != nil {
 		log.Fatalf("Failed %s", err.Error())
 	}
@@ -47,7 +71,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to get description source file %s", err.Error())
 	}
-	botInstance, err := bot.NewBot(client, *token, *urlContainer, bot.DummyAuthorisation{})
+	botInstance, err := bot.NewBot(client, *token, *urlContainer, auth)
 	if err != nil {
 		log.Fatalf("Failed tto create bot %s", err.Error())
 	}
