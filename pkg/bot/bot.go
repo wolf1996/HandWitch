@@ -113,6 +113,27 @@ func (b *Bot) checkMessageAuth(message *tgbotapi.Message) (bool, error) {
 	return role == User, nil
 }
 
+func (b *Bot) processUpdate(ctx context.Context, update tgbotapi.Update) {
+	if update.Message == nil { // ignore any non-Message Updates
+		return
+	}
+	if !update.Message.IsCommand() {
+		// ignore non-Command  Updates
+		return
+	}
+	allowed, err := b.checkMessageAuth(update.Message)
+	if err != nil {
+		log.Printf("Failed to check user role %s", err.Error())
+		return
+	}
+	if !allowed {
+		log.Printf("User %s has a \"Guest\" role, ignore", update.Message.From.UserName)
+		return
+	}
+	log.Printf("Got message [%s] %s", update.Message.From.UserName, update.Message.Text)
+	go b.handleMessage(ctx, update.Message)
+}
+
 // Listen слушаем сообщения и отправляем ответ
 func (b *Bot) Listen(ctx context.Context) error {
 	u := tgbotapi.NewUpdate(0)
@@ -122,25 +143,12 @@ func (b *Bot) Listen(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	for update := range updates {
-		if update.Message == nil { // ignore any non-Message Updates
-			continue
+	for {
+		select {
+		case up := <-updates:
+			b.processUpdate(ctx, up)
+		case <-ctx.Done():
+			return ctx.Err()
 		}
-		if !update.Message.IsCommand() {
-			// ignore non-Command  Updates
-			continue
-		}
-		allowed, err := b.checkMessageAuth(update.Message)
-		if err != nil {
-			log.Printf("Failed to check user role %s", err.Error())
-			continue
-		}
-		if !allowed {
-			log.Printf("User %s has a \"Guest\" role, ignore", update.Message.From.UserName)
-			continue
-		}
-		log.Printf("Got message [%s] %s", update.Message.From.UserName, update.Message.Text)
-		go b.handleMessage(ctx, update.Message)
 	}
-	return nil
 }
