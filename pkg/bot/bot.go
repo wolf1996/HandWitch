@@ -4,13 +4,13 @@ import (
 	"bytes"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"strings"
 
 	"context"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	log "github.com/sirupsen/logrus"
 	"github.com/wolf1996/HandWitch/pkg/core"
 )
 
@@ -27,9 +27,9 @@ type Bot struct {
 func NewBot(client *http.Client, token string, app core.URLProcessor, auth Authorisation) (*Bot, error) {
 	bot, err := tgbotapi.NewBotAPIWithClient(token, client)
 	if err != nil {
-		log.Panic(err)
+		log.Fatalf(err.Error())
 	}
-	log.Printf("Authorized on account %s", bot.Self.UserName)
+	log.Info("Authorized on account %s", bot.Self.UserName)
 	return &Bot{
 		api:  bot,
 		app:  app,
@@ -95,13 +95,13 @@ func (b *Bot) handleMessage(ctx context.Context, message *tgbotapi.Message) {
 		msg := tgbotapi.NewMessage(message.Chat.ID, errmsg)
 		_, err = b.api.Send(msg)
 		if err != nil {
-			log.Printf("Error on sending message %s", err.Error())
+			log.Errorf("Error on sending message %s", err.Error())
 		}
 	}
 	msg := tgbotapi.NewMessage(message.Chat.ID, resp.String())
 	_, err = b.api.Send(msg)
 	if err != nil {
-		log.Printf("Error on sending message %s", err.Error())
+		log.Errorf("Error on sending message %s", err.Error())
 	}
 }
 
@@ -123,14 +123,14 @@ func (b *Bot) processUpdate(ctx context.Context, update tgbotapi.Update) {
 	}
 	allowed, err := b.checkMessageAuth(update.Message)
 	if err != nil {
-		log.Printf("Failed to check user role %s", err.Error())
+		log.Errorf("Failed to check user role %s", err.Error())
 		return
 	}
 	if !allowed {
-		log.Printf("User %s has a \"Guest\" role, ignore", update.Message.From.UserName)
+		log.Warn("User %s has a \"Guest\" role, ignore", update.Message.From.UserName)
 		return
 	}
-	log.Printf("Got message [%s] %s", update.Message.From.UserName, update.Message.Text)
+	log.Debug("Got message [%s] %s", update.Message.From.UserName, update.Message.Text)
 	go b.handleMessage(ctx, update.Message)
 }
 

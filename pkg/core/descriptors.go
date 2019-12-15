@@ -6,12 +6,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"net/http/httputil"
 	"sort"
 	"strconv"
 	"text/template"
+
+	log "github.com/sirupsen/logrus"
 )
 
 //HandProcessorImp hand processor implementation
@@ -99,13 +100,13 @@ func (processor *HandProcessorImp) Process(ctx context.Context, writer io.Writer
 	if err != nil {
 		return fmt.Errorf("Failed to build URL %s", err.Error())
 	}
-	log.Printf("Got URL %s", buf.String())
+	log.Debugf("Got URL %s", buf.String())
 	req, err := http.NewRequestWithContext(ctx, "GET", buf.String(), nil)
 	if err != nil {
 		return fmt.Errorf("Failed to build request %s", err.Error())
 	}
 	processor.addQueryParams(req, params)
-	log.Printf("Got request %s", func() string {
+	log.Debugf("Got request %s", func() string {
 		bytes, err := httputil.DumpRequest(req, true)
 		if err != nil {
 			return err.Error()
@@ -116,7 +117,7 @@ func (processor *HandProcessorImp) Process(ctx context.Context, writer io.Writer
 	if err != nil {
 		return fmt.Errorf("Failed to read result %s", err.Error())
 	}
-	log.Printf("Got responce %s", func() string {
+	log.Debugf("Got responce %s", func() string {
 		bytes, err := httputil.DumpResponse(responce, true)
 		if err != nil {
 			return err.Error()

@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"context"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -11,6 +10,7 @@ import (
 	"flag"
 	"net/http"
 
+	log "github.com/sirupsen/logrus"
 	bot "github.com/wolf1996/HandWitch/pkg/bot"
 	"github.com/wolf1996/HandWitch/pkg/core"
 )
@@ -47,19 +47,26 @@ func main() {
 	token := flag.String("token", "", "telegramm token")
 	proxy := flag.String("proxy", "", "proxy to telegram")
 	path := flag.String("path", "", "path to descriptions")
+	logLevel := flag.String("log", "info", "log level")
 	whiteListPath := flag.String("whitelist", "", "path to list of allowed users")
 	flag.Parse()
-	var err error
+
+	loglevel, err := log.ParseLevel(*logLevel)
+	if err != nil {
+		log.Fatalf("Failed to parse LogLevel %s", err.Error())
+	}
+	log.SetLevel(loglevel)
+
 	// из-за блокировок телеграмм даём возможность работы через прокси
 	client := http.DefaultClient
 	if *proxy != "" {
-		log.Printf("Got Proxy %s", *proxy)
+		log.Info("Got Proxy %s", *proxy)
 		client, err = bot.GetClientWithProxy(*proxy)
 		if err != nil {
 			log.Fatalf("Failed to create http client with proxy %s", err.Error())
 		}
 	} else {
-		log.Print("Got No Proxy")
+		log.Info("Got No Proxy")
 	}
 
 	// пытаемся собрать список разрешённых пользователей
@@ -72,7 +79,7 @@ func main() {
 		}
 	} else {
 		auth = bot.DummyAuthorisation{}
-		log.Printf("No whitelist found starting with dummy auth")
+		log.Info("No whitelist found starting with dummy auth")
 	}
 
 	// грузим описания ручек
@@ -100,12 +107,12 @@ func main() {
 
 	go func() {
 		signal := <-sysSignals
-		log.Printf("Got %s system signal, aborting...", signal)
+		log.Info("Got %s system signal, aborting...", signal)
 		cancel()
 	}()
 
 	err = botInstance.Listen(ctx)
 	if err != nil {
-		log.Fatalf("Stopping bot %s", err.Error())
+		log.Info("Stopping bot %s", err.Error())
 	}
 }
