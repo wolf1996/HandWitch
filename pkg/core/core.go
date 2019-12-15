@@ -2,6 +2,7 @@
 package core
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -98,7 +99,7 @@ type URLProcessor struct {
 //HandProcessor hand processor
 type HandProcessor interface {
 	WriteHelp(writer io.Writer) error
-	Process(writer io.Writer, params map[string]interface{}) error
+	Process(ctx context.Context, writer io.Writer, params map[string]interface{}) error
 	GetInfo() *URLRecord
 	GetParam(string) (ParamProcessor, error)
 }

@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"log"
 	"os"
 
@@ -75,7 +76,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed tto create bot %s", err.Error())
 	}
-	err = botInstance.Listen()
+	err = botInstance.Listen(context.Background())
 	if err != nil {
 		log.Fatalf("Failed on listen %s", err.Error())
 	}

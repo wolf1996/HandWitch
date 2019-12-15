@@ -63,7 +63,7 @@ func (b *Bot) processHand(ctx context.Context, writer io.Writer, messageArgument
 		}
 		praramsMap[paramName] = value
 	}
-	return handProcessor.Process(writer, praramsMap)
+	return handProcessor.Process(ctx, writer, praramsMap)
 }
 
 func (b *Bot) helpHand(ctx context.Context, writer io.Writer, messageArguments string) error {
@@ -114,7 +114,7 @@ func (b *Bot) checkMessageAuth(message *tgbotapi.Message) (bool, error) {
 }
 
 // Listen слушаем сообщения и отправляем ответ
-func (b *Bot) Listen() error {
+func (b *Bot) Listen(ctx context.Context) error {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
 
@@ -140,7 +140,7 @@ func (b *Bot) Listen() error {
 			continue
 		}
 		log.Printf("Got message [%s] %s", update.Message.From.UserName, update.Message.Text)
-		go b.handleMessage(context.Background(), update.Message)
+		go b.handleMessage(ctx, update.Message)
 	}
 	return nil
 }

@@ -2,6 +2,7 @@ package core
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -351,7 +352,7 @@ func TestRender(t *testing.T) {
 				t.Errorf("Failed to get param handler %s for hand %s", err.Error(), expect.HandName)
 				continue
 			}
-			err = handProcessor.Process(buf, expect.Inp)
+			err = handProcessor.Process(context.Background(), buf, expect.Inp)
 			if err != nil {
 				if err != expect.Err {
 					continue KEYLOOP
