@@ -123,3 +123,95 @@ func TestDescriptionsLoader(t *testing.T) {
 		}
 	}
 }
+
+func TestDescriptionsLoaderYAML(t *testing.T) {
+	testCases := []struct {
+		Input  string
+		Name   string
+		Output DescriptionParsingResults
+	}{
+		{
+			Name: "simple result",
+			Input: `hand1:
+  url_template: https://bash.im/entity/{entity_id}/v/{v}
+  parameters:
+    entity_id:
+      help: Help to entity_id
+      name: entity_id
+      destination: URL
+      type: integer
+    query_param_1:
+      help: Help to query_param_1
+      name: query_param_1
+      destination: query
+      type: integer
+    query_param_2:
+      help: Help to query_param_2
+      name: query_param_2
+      destination: query
+      type: string
+    v:
+      help: Help to v
+      name: v
+      destination: URL
+      type: string
+  body: Value of Value is {{ .value }}
+  url_name: ValuableName
+  help: ""`,
+			Output: DescriptionParsingResults{
+				Container: URLContrainer{
+					"hand1": {
+						URLTemplate: fmt.Sprintf("%s/entity/{entity_id}/v/{v}", "https://bash.im"),
+						Parameters: ParamsDescription{
+							"entity_id": ParamInfo{
+								Name:        "entity_id",
+								Help:        "Help to entity_id",
+								Type:        IntegerType,
+								Destination: URLPlaced,
+							},
+							"v": ParamInfo{
+								Name:        "v",
+								Help:        "Help to v",
+								Type:        StringType,
+								Destination: URLPlaced,
+							},
+							"query_param_1": ParamInfo{
+								Name:        "query_param_1",
+								Help:        "Help to query_param_1",
+								Type:        IntegerType,
+								Destination: QueryPlaced,
+							},
+							"query_param_2": ParamInfo{
+								Name:        "query_param_2",
+								Help:        "Help to query_param_2",
+								Type:        StringType,
+								Destination: QueryPlaced,
+							},
+						},
+						Body:    "Value of Value is {{ .value }}",
+						URLName: "ValuableName",
+					},
+				},
+				Err: nil,
+			},
+		},
+	}
+	for _, testCase := range testCases {
+		reader := strings.NewReader(testCase.Input)
+		result, errResult := GetDescriptionSourceFromYAML(reader)
+		if (errResult != nil) != (testCase.Output.Err != nil) {
+			safeErrorPrint := func(errOut error) string {
+				if errOut == nil {
+					return "nil"
+				}
+				return errOut.Error()
+			}
+			t.Errorf("%s: Not equal errors, got %s, expected %s", testCase.Name, safeErrorPrint(errResult), safeErrorPrint(testCase.Output.Err))
+			t.FailNow()
+		}
+
+		if ok, msg := cmpHandlers(testCase.Output.Container, result); !ok {
+			t.Errorf("%s: error on results comparision %s", testCase.Name, msg)
+		}
+	}
+}

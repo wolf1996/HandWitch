@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -13,6 +14,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	bot "github.com/wolf1996/HandWitch/pkg/bot"
 	"github.com/wolf1996/HandWitch/pkg/core"
+	"path/filepath"
 )
 
 func getDescriptionSourceFromFile(path string) (*core.URLProcessor, error) {
@@ -21,7 +23,23 @@ func getDescriptionSourceFromFile(path string) (*core.URLProcessor, error) {
 		return nil, err
 	}
 	reader := bufio.NewReader(file)
-	descriptionSource, err := core.GetDescriptionSourceFromJSON(reader)
+	ext := filepath.Ext(path)
+	var descriptionSource core.DescriptionsSource
+	switch ext {
+	case ".yaml":
+		descriptionSource, err = core.GetDescriptionSourceFromYAML(reader)
+		if err != nil {
+			return nil, err
+		}
+
+	case ".json":
+		descriptionSource, err = core.GetDescriptionSourceFromJSON(reader)
+		if err != nil {
+			return nil, err
+		}
+	default:
+		return nil, fmt.Errorf("Unknown file extension %s", ext)
+	}
 	if err != nil {
 		return nil, err
 	}

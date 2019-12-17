@@ -66,10 +66,10 @@ func (tp ParamType) ToString() (string, error) {
 
 //ParamInfo Config parameter description
 type ParamInfo struct {
-	Help        string           `json:"help"`
-	Name        string           `json:"name"`
-	Destination ParamDestination `json:"destination"`
-	Type        ParamType        `json:"type"`
+	Help        string           `json:"help" yaml:"help"`
+	Name        string           `json:"name" yaml:"name"`
+	Destination ParamDestination `json:"destination" yaml:"destination"`
+	Type        ParamType        `json:"type" yaml:"type"`
 }
 
 //ParamsDescription Container for param
@@ -82,11 +82,11 @@ var (
 
 //URLRecord Full Hand description in configuration file
 type URLRecord struct {
-	URLTemplate string            `json:"URL_template"`
-	Parameters  ParamsDescription `json:"params"`
-	Body        string            `json:"body"`
-	URLName     string            `json:"name"`
-	Help        string            `json:"help"`
+	URLTemplate string            `json:"URL_template" yaml:"url_template"`
+	Parameters  ParamsDescription `json:"params" yaml:"parameters"`
+	Body        string            `json:"body" yaml:"body"`
+	URLName     string            `json:"name" yaml:"url_name"`
+	Help        string            `json:"help" yaml:"help"`
 }
 
 //URLContrainer Container of all URLs

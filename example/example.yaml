@@ -1,0 +1,26 @@
+example:
+  url_template: http://localhost:8080/{{.string_param}}/{{.int_param}}
+  parameters:
+    query_int:
+      help: query_int to demonstrate int param in query
+      name: query_int
+      destination: query
+      type: integer
+    query_string:
+      help: query_string to demonstrate string param in query
+      name: query_string
+      destination: query
+      type: string
+    int_param:
+      help: int_param to demonstrate string params in url
+      name: int_param
+      destination: URL
+      type: integer
+    string_param:
+      help: string_param to demonstrate integer param in url
+      name: string_param
+      destination: URL
+      type: string
+  body: "{{ range $key, $value := . }} \n {{ $key }}: {{ $value }} \n {{ end }}"
+  url_name: example
+  help: "simple example hand"
