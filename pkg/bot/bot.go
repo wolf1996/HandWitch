@@ -16,24 +16,30 @@ import (
 
 // Bot создаёт общий интерфейс для бота
 type Bot struct {
-	api  *tgbotapi.BotAPI
-	app  core.URLProcessor
-	auth Authorisation
+	api       *tgbotapi.BotAPI
+	app       core.URLProcessor
+	auth      Authorisation
+	formating string
 }
 
 //TODO: проверить каноничность
 
 // NewBot создаёт новый инстанс бота
-func NewBot(client *http.Client, token string, app core.URLProcessor, auth Authorisation) (*Bot, error) {
+func NewBot(client *http.Client, token string, app core.URLProcessor, auth Authorisation, formating string) (*Bot, error) {
 	bot, err := tgbotapi.NewBotAPIWithClient(token, client)
 	if err != nil {
 		log.Fatalf(err.Error())
 	}
 	log.Infof("Authorized on account %s", bot.Self.UserName)
+	nrms, err := normilizeMessageMode(formating)
+	if err != nil {
+		return nil, fmt.Errorf("Invalid formating %s", err.Error())
+	}
 	return &Bot{
-		api:  bot,
-		app:  app,
-		auth: auth,
+		api:       bot,
+		app:       app,
+		auth:      auth,
+		formating: nrms,
 	}, nil
 }
 
@@ -89,6 +95,16 @@ func (b *Bot) executeMessage(ctx context.Context, writer io.Writer, message *tgb
 	return fmt.Errorf("Wrong comand %s", message.Command())
 }
 
+func normilizeMessageMode(raw string) (string, error) {
+	switch strings.ToLower(raw) {
+	case "markdown":
+		return tgbotapi.ModeMarkdown, nil
+	case "html":
+		return tgbotapi.ModeHTML, nil
+	}
+	return "", fmt.Errorf("Invalid message mode %s", raw)
+}
+
 func (b *Bot) handleMessage(ctx context.Context, message *tgbotapi.Message, logger *log.Entry) {
 	var resp bytes.Buffer
 	err := b.executeMessage(ctx, &resp, message, logger)
@@ -101,6 +117,10 @@ func (b *Bot) handleMessage(ctx context.Context, message *tgbotapi.Message, logg
 		}
 	}
 	msg := tgbotapi.NewMessage(message.Chat.ID, resp.String())
+	if b.formating != "" {
+		logger.Debugf("setting formating: %s", b.formating)
+		msg.ParseMode = b.formating
+	}
 	_, err = b.api.Send(msg)
 	if err != nil {
 		logger.Errorf("Error on sending message %s", err.Error())

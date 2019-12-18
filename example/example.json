@@ -27,7 +27,7 @@
              "type":"string"
           }
        },
-       "body":"{{ range $key, $value := . }} \n {{ $key }}: {{ $value }} \n {{ end }}",
+       "body":"{{ range $key, $value := . }} \n ***{{ $key }}***: {{ $value }} \n {{ end }}",
        "name":"example",
        "help":"simple example hand"
     }

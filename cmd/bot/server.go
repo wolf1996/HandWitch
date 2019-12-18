@@ -67,6 +67,7 @@ func main() {
 	path := flag.String("path", "", "path to descriptions")
 	logLevel := flag.String("log", "info", "log level")
 	whiteListPath := flag.String("whitelist", "", "path to list of allowed users")
+	formating := flag.String("formating", "", "formating [markdown/html] for message")
 	flag.Parse()
 
 	loglevel, err := log.ParseLevel(*logLevel)
@@ -108,7 +109,7 @@ func main() {
 	}
 
 	// собираем бота
-	botInstance, err := bot.NewBot(client, *token, *urlContainer, auth)
+	botInstance, err := bot.NewBot(client, *token, *urlContainer, auth, *formating)
 	if err != nil {
 		log.Fatalf("Failed tto create bot %s", err.Error())
 	}

@@ -21,6 +21,6 @@ example:
       name: string_param
       destination: URL
       type: string
-  body: "{{ range $key, $value := . }} \n {{ $key }}: {{ $value }} \n {{ end }}"
+  body: "{{ range $key, $value := . }} \n *{{ $key }}*: {{ $value }} \n {{ end }}"
   url_name: example
   help: "simple example hand"
