@@ -61,6 +61,19 @@ func getAuthSourceFromFile(path string) (bot.Authorisation, error) {
 	return authSource, err
 }
 
+func getConfigFromPath(path string) (*bot.Config, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	reader := bufio.NewReader(file)
+	botConfig, err := bot.GetConfigFromJSON(reader)
+	if err != nil {
+		return nil, err
+	}
+	return &botConfig, nil
+}
+
 func main() {
 	token := flag.String("token", "", "telegramm token")
 	proxy := flag.String("proxy", "", "proxy to telegram")
@@ -68,7 +81,27 @@ func main() {
 	logLevel := flag.String("log", "info", "log level")
 	whiteListPath := flag.String("whitelist", "", "path to list of allowed users")
 	formating := flag.String("formating", "", "formating [markdown/html] for message")
+	configPath := flag.String("config", "", "bot configuration path")
+
 	flag.Parse()
+
+	config, err := getConfigFromPath(*configPath)
+
+	if *formating == "" {
+		*formating = config.Formatting
+	}
+
+	if *logLevel == "" {
+		*formating = config.Formatting
+	}
+
+	if *whiteListPath == "" {
+		*whiteListPath = config.WhiteList
+	}
+
+	if *path == "" {
+		*path = config.Path
+	}
 
 	loglevel, err := log.ParseLevel(*logLevel)
 	if err != nil {
