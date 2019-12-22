@@ -103,6 +103,10 @@ func main() {
 		*path = config.Path
 	}
 
+	if *proxy == "" {
+		*proxy = config.Proxy
+	}
+
 	loglevel, err := log.ParseLevel(*logLevel)
 	if err != nil {
 		log.Fatalf("Failed to parse LogLevel %s", err.Error())

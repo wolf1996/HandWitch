@@ -22,7 +22,8 @@ func TestDescriptionsLoader(t *testing.T) {
 				"formatting": "Markdown",
 				"log_level": "Debug",
 				"path": "/path/descriptions.json",
-				"white_list": "/path/whitelist.json"
+				"white_list": "/path/whitelist.json",
+				"proxy": "http://163.172.152.52:8811"
 			 }`,
 			Output: DescriptionParsingResults{
 				Output: Config{
@@ -30,6 +31,7 @@ func TestDescriptionsLoader(t *testing.T) {
 					LogLevel:   "Debug",
 					Path:       "/path/descriptions.json",
 					WhiteList:  "/path/whitelist.json",
+					Proxy:      "http://163.172.152.52:8811",
 				},
 				Err: nil,
 			},

@@ -12,6 +12,7 @@ type Config struct {
 	LogLevel   string `json:"log_level"`
 	Path       string `json:"path"`
 	WhiteList  string `json:"white_list"`
+	Proxy      string `json:"proxy"`
 }
 
 // GetConfigFromJSON parses config from reader as a JSON
