@@ -87,6 +87,10 @@ func main() {
 
 	config, err := getConfigFromPath(*configPath)
 
+	if err != nil {
+		log.Fatalf("Failed to parse config: %s", err.Error())
+	}
+
 	if *formating == "" {
 		*formating = config.Formatting
 	}
@@ -106,12 +110,6 @@ func main() {
 	if *proxy == "" {
 		*proxy = config.Proxy
 	}
-
-	loglevel, err := log.ParseLevel(*logLevel)
-	if err != nil {
-		log.Fatalf("Failed to parse LogLevel %s", err.Error())
-	}
-	log.SetLevel(loglevel)
 
 	// из-за блокировок телеграмм даём возможность работы через прокси
 	client := http.DefaultClient
