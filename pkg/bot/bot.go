@@ -52,6 +52,8 @@ func (b *Bot) getHandName(messageArguments string) (string, error) {
 	return strings.TrimSpace(handName), nil
 }
 
+// TODO: подумать о каноничности такого подхода
+// для разных операций за формирование конечного сообщения отвечают различные уровни архитектуры
 func (b *Bot) getHandParams(handProcessor core.HandProcessor, messageArguments string) (map[string]interface{}, error) {
 	result := make(map[string]interface{})
 	rows := strings.Split(messageArguments, "\n")
