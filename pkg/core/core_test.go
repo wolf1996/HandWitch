@@ -305,7 +305,8 @@ func TestRender(t *testing.T) {
 									Destination: QueryPlaced,
 								},
 							},
-							Body:    "Value of Value is {{ .value }}",
+							// TODO: сделать проверку для метаинформации
+							Body:    "Value of Value is {{ .responce.value }}",
 							URLName: "ValuableName",
 						},
 					},

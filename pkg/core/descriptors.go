@@ -91,17 +91,17 @@ func (processor *HandProcessorImp) addQueryParams(req *http.Request, params map[
 //Process load data from hand url and
 //execute template with it
 func (processor *HandProcessorImp) Process(ctx context.Context, writer io.Writer, params map[string]interface{}, logger *log.Entry) error {
-	buf := new(bytes.Buffer)
+	url := new(bytes.Buffer)
 	tmp, err := template.New(processor.URLName).Parse(processor.URLTemplate)
 	if err != nil {
 		return fmt.Errorf("Failed to build URL template %s", err.Error())
 	}
-	err = tmp.Execute(buf, params)
+	err = tmp.Execute(url, params)
 	if err != nil {
 		return fmt.Errorf("Failed to build URL %s", err.Error())
 	}
-	logger.Debugf("Got URL %s", buf.String())
-	req, err := http.NewRequestWithContext(ctx, "GET", buf.String(), nil)
+	logger.Debugf("Got URL %s", url.String())
+	req, err := http.NewRequestWithContext(ctx, "GET", url.String(), nil)
 	if err != nil {
 		return fmt.Errorf("Failed to build request %s", err.Error())
 	}
@@ -124,8 +124,8 @@ func (processor *HandProcessorImp) Process(ctx context.Context, writer io.Writer
 		}
 		return string(bytes)
 	}())
-	data := make(map[string]interface{})
-	err = json.NewDecoder(responce.Body).Decode(&data)
+	responceData := make(map[string]interface{})
+	err = json.NewDecoder(responce.Body).Decode(&responceData)
 	if err != nil {
 		return fmt.Errorf("Failed to decode json result %s", err.Error())
 	}
@@ -133,7 +133,14 @@ func (processor *HandProcessorImp) Process(ctx context.Context, writer io.Writer
 	if err != nil {
 		return fmt.Errorf("Failed to build request %s", err.Error())
 	}
-	err = template.Lookup(processor.URLRecord.URLName).Execute(writer, data)
+	templateData := map[string]interface{}{
+		"responce": responceData,
+		"meta": map[string]interface{}{
+			"url": url,
+		},
+		"params": params,
+	}
+	err = template.Lookup(processor.URLRecord.URLName).Execute(writer, templateData)
 	if err != nil {
 		return fmt.Errorf("Failed to execute %s", err.Error())
 	}
