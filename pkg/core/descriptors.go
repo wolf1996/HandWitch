@@ -136,7 +136,7 @@ func (processor *HandProcessorImp) Process(ctx context.Context, writer io.Writer
 	templateData := map[string]interface{}{
 		"responce": responceData,
 		"meta": map[string]interface{}{
-			"url": url,
+			"url": req.URL.String(),
 		},
 		"params": params,
 	}

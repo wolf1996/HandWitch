@@ -278,7 +278,7 @@ func TestRender(t *testing.T) {
 				NewDescriptionSourceFromDict(
 					URLContrainer{
 						"hand1": {
-							URLTemplate: fmt.Sprintf("%s/entity/{entity_id}/v/{v}", serv.URL),
+							URLTemplate: fmt.Sprintf("%s/entity/{{.entity_id}}/v/{{.v}}", serv.URL),
 							Parameters: ParamsDescription{
 								"entity_id": ParamInfo{
 									Name:        "entity_id",
@@ -306,7 +306,9 @@ func TestRender(t *testing.T) {
 								},
 							},
 							// TODO: сделать проверку для метаинформации
-							Body:    "Value of Value is {{ .responce.value }}",
+							Body: `Value of Value is {{ .responce.value }}
+Debug url is {{ .meta.url }}
+Params parm a is {{ .params.entity_id }}`,
 							URLName: "ValuableName",
 						},
 					},
@@ -329,7 +331,9 @@ func TestRender(t *testing.T) {
 						"QueryParam1": 2,
 						"QueryParam2": "b",
 					},
-					Output: "Value of Value is ValueForValue",
+					Output: fmt.Sprintf(`Value of Value is ValueForValue
+Debug url is %s/entity/1/v/a?QueryParam1=2&QueryParam2=b
+Params parm a is 1`, serv.URL),
 					Requests: []*http.Request{
 						mustBuildRequest("GET", fmt.Sprintf("%s/entity/1/v/a?QueryParam1=2&QueryParam2=b", serv.URL)),
 					},
@@ -365,7 +369,7 @@ func TestRender(t *testing.T) {
 			}
 			got := buf.String()
 			if got != expect.Output {
-				t.Errorf("Failed to get parameter help %s expected %s got %s", expect.HandName, expect.Output, got)
+				t.Errorf("Wrong hand output %s expected:\n[%s]\n got:\n[%s]\n", expect.HandName, expect.Output, got)
 				continue KEYLOOP
 			}
 			// TODO: Сделать проверку урлов
