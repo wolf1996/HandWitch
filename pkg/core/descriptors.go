@@ -136,9 +136,9 @@ func (processor *HandProcessorImp) Process(ctx context.Context, writer io.Writer
 	templateData := map[string]interface{}{
 		"responce": responceData,
 		"meta": map[string]interface{}{
-			"url": req.URL.String(),
+			"url":    req.URL.String(),
+			"params": params,
 		},
-		"params": params,
 	}
 	err = template.Lookup(processor.URLRecord.URLName).Execute(writer, templateData)
 	if err != nil {

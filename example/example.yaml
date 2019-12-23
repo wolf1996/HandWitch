@@ -25,7 +25,7 @@ example:
   *URL requested*: {{.meta.url}}
   \n
   *params*:
-  {{ range $key, $value := .params }} *{{ $key }}*: {{ $value }} \n {{ end }}
+  {{ range $key, $value := .meta.params }} *{{ $key }}*: {{ $value }} \n {{ end }}
   \n
   *responce*:
   {{ range $key, $value := .responce }} *{{ $key }}*: {{ $value }} \n {{ end }}

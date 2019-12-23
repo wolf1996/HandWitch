@@ -308,7 +308,7 @@ func TestRender(t *testing.T) {
 							// TODO: сделать проверку для метаинформации
 							Body: `Value of Value is {{ .responce.value }}
 Debug url is {{ .meta.url }}
-Params parm a is {{ .params.entity_id }}`,
+Params parm a is {{ .meta.params.entity_id }}`,
 							URLName: "ValuableName",
 						},
 					},
