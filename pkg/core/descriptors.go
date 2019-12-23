@@ -141,8 +141,8 @@ func (processor *HandProcessorImp) Process(ctx context.Context, writer io.Writer
 }
 
 //GetInfo get row data
-func (*HandProcessorImp) GetInfo() *URLRecord {
-	return nil
+func (processor *HandProcessorImp) GetInfo() *URLRecord {
+	return processor.URLRecord
 }
 
 //GetParam get parametere handler

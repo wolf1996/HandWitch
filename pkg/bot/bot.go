@@ -43,33 +43,56 @@ func NewBot(client *http.Client, token string, app core.URLProcessor, auth Autho
 	}, nil
 }
 
-func (b *Bot) processHand(ctx context.Context, writer io.Writer, messageArguments string, logger *log.Entry) error {
-	if messageArguments == "" {
-		return fmt.Errorf("Empty arguments")
-	}
+func (b *Bot) getHandName(messageArguments string) (string, error) {
 	rows := strings.Split(messageArguments, "\n")
-	handName := rows[0]
-	params := rows[1:]
-	praramsMap := make(map[string]interface{})
-	handProcessor, err := b.app.GetHand(handName)
-	if err != nil {
-		return err
+	if len(rows) < 1 {
+		return "", fmt.Errorf("Failed to get hand name: empty arguments")
 	}
-	for _, row := range params {
+	handName := rows[0]
+	return strings.TrimSpace(handName), nil
+}
+
+func (b *Bot) getHandParams(handProcessor core.HandProcessor, messageArguments string) (map[string]interface{}, error) {
+	result := make(map[string]interface{})
+	rows := strings.Split(messageArguments, "\n")
+	if len(rows) < 1 {
+		return result, fmt.Errorf("Failed to get hand name: empty arguments")
+	}
+	hands := rows[1:]
+	for _, row := range hands {
 		splited := strings.Split(row, " ")
 		paramName := splited[0]
 		paramValueStr := splited[1]
 		paramProcessor, err := handProcessor.GetParam(paramName)
 		if err != nil {
-			return err
+			return result, err
 		}
 		value, err := paramProcessor.ParseFromString(paramValueStr)
 		if err != nil {
-			return err
+			return result, err
 		}
-		praramsMap[paramName] = value
+		result[paramName] = value
 	}
-	return handProcessor.Process(ctx, writer, praramsMap, logger)
+	return result, nil
+}
+
+func (b *Bot) processHand(ctx context.Context, writer io.Writer, messageArguments string, logger *log.Entry) error {
+	if messageArguments == "" {
+		return fmt.Errorf("Empty arguments")
+	}
+	handName, err := b.getHandName(messageArguments)
+	if err != nil {
+		return err
+	}
+	handProcessor, err := b.app.GetHand(handName)
+	if err != nil {
+		return err
+	}
+	params, err := b.getHandParams(handProcessor, messageArguments)
+	if err != nil {
+		return err
+	}
+	return handProcessor.Process(ctx, writer, params, logger)
 }
 
 func (b *Bot) helpHand(ctx context.Context, writer io.Writer, messageArguments string) error {
