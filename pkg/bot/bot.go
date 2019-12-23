@@ -62,7 +62,10 @@ func (b *Bot) getHandParams(handProcessor core.HandProcessor, messageArguments s
 	}
 	hands := rows[1:]
 	for _, row := range hands {
-		splited := strings.Split(row, " ")
+		splited := strings.Fields(row)
+		if len(splited) != 2 {
+			return result, fmt.Errorf("Failed to parse param row %s", row)
+		}
 		paramName := splited[0]
 		paramValueStr := splited[1]
 		paramProcessor, err := handProcessor.GetParam(paramName)
