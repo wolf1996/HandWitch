@@ -50,7 +50,7 @@ func TestDescriptionsLoader(t *testing.T) {
 			t.Errorf("%s: Not equal errors, got %s, expected %s", testCase.Name, safeErrorPrint(errResult), safeErrorPrint(testCase.Output.Err))
 		}
 
-		if testCase.Output.Output != result {
+		if testCase.Output.Output != *result {
 			t.Errorf("%s: error on results comparision %v  %v", testCase.Name, testCase.Output.Output, result)
 		}
 	}
