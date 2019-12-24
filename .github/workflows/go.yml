@@ -17,12 +17,18 @@ jobs:
       uses: actions/checkout@v1
 
     - name: Build
-      run: go build -v .
+      env:
+        GO111MODULE: on
+        GOFLAGS: -mod=vendor
+      run: go build -v ./...
   
   test:
     name: Test
     runs-on: ubuntu-latest
     steps:
     - name: Test
+      env:
+        GO111MODULE: on
+        GOFLAGS: -mod=vendor
       run: go test -v -race ./...
      
