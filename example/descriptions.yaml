@@ -22,13 +22,13 @@ example:
       destination: URL
       type: string
   body: "
-  *URL requested*: {{.meta.url}}
+  *URL requested* :\n {{.meta.url}}
   \n
-  *params*:
-  {{ range $key, $value := .meta.params }} *{{ $key }}*: {{ $value }} \n {{ end }}
+  *params* :\n
+  {{ range $key, $value := .meta.params }} *{{ $key }}* : {{ $value }} \n {{ end }}
   \n
-  *responce*:
-  {{ range $key, $value := .responce }} *{{ $key }}*: {{ $value }} \n {{ end }}
+  *responce* :\n
+  {{ range $key, $value := .responce }} *{{ $key }}* : {{ $value }} \n {{ end }}
   "
   url_name: example
   help: "simple example hand"

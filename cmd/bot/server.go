@@ -71,7 +71,7 @@ func getConfigFromPath(path string) (*bot.Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &botConfig, nil
+	return botConfig, nil
 }
 
 func main() {
@@ -84,11 +84,13 @@ func main() {
 	configPath := flag.String("config", "", "bot configuration path")
 
 	flag.Parse()
-
-	config, err := getConfigFromPath(*configPath)
-
-	if err != nil {
-		log.Fatalf("Failed to parse config: %s", err.Error())
+	var err error
+	config := bot.GetDefaultConfig()
+	if *configPath != "" {
+		config, err = getConfigFromPath(*configPath)
+		if err != nil {
+			log.Fatalf("Failed to parse config: %s", err.Error())
+		}
 	}
 
 	if *formating == "" {
@@ -96,7 +98,7 @@ func main() {
 	}
 
 	if *logLevel == "" {
-		*formating = config.Formatting
+		*logLevel = config.LogLevel
 	}
 
 	if *whiteListPath == "" {

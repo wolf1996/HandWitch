@@ -1,7 +1,7 @@
 {
 	"formatting": "MarkDown",
 	"log_level": "Debug",
-	"path": "./example.yaml",
+	"path": "./descriptions.yaml",
     "white_list": "./whitelist.json",
     "proxy": "http://163.172.152.52:8811"
 }

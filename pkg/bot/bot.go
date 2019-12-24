@@ -152,7 +152,7 @@ func (b *Bot) handleMessage(ctx context.Context, message *tgbotapi.Message, logg
 	}
 	_, err = b.api.Send(msg)
 	if err != nil {
-		logger.Errorf("Error on sending message %s", err.Error())
+		logger.Errorf("Error on sending message %s:\n message text:\n %s", err.Error(), msg.Text)
 	}
 }
 
