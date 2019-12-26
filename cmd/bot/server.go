@@ -113,6 +113,13 @@ func main() {
 		*proxy = config.Proxy
 	}
 
+	loglevel, err := log.ParseLevel(*logLevel)
+	if err != nil {
+		log.Fatalf("Failed to parse LogLevel %s", err.Error())
+	}
+	logger := log.StandardLogger()
+	logger.SetLevel(loglevel)
+
 	// из-за блокировок телеграмм даём возможность работы через прокси
 	client := http.DefaultClient
 	if *proxy != "" {
@@ -167,7 +174,7 @@ func main() {
 		cancel()
 	}()
 
-	err = botInstance.Listen(ctx, log.StandardLogger())
+	err = botInstance.Listen(ctx, logger)
 	if err != nil {
 		log.Infof("Stopping bot %s", err.Error())
 	}
