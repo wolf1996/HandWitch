@@ -3,7 +3,7 @@
 	"path": "./descriptions.yaml",
 	"telegram": {
 		"white_list": "./whitelist.json",
-		"proxy": "http://163.172.152.52:8811",
+		"proxy": "http://45.120.119.55:59565",
 		"formating": "MarkDown"
 	}
 }
