@@ -1,7 +1,9 @@
 {
-	"formatting": "MarkDown",
 	"log_level": "Debug",
 	"path": "./descriptions.yaml",
-    "white_list": "./whitelist.json",
-    "proxy": "http://163.172.152.52:8811"
+	"telegram": {
+		"white_list": "./whitelist.json",
+		"proxy": "http://163.172.152.52:8811",
+		"formating": "MarkDown"
+	}
 }

@@ -40,6 +40,14 @@ func prerunRoot(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
+func bindFlag(cmd *cobra.Command, conf string, name string) error {
+	err := viper.BindPFlag(conf, cmd.PersistentFlags().Lookup(name))
+	if err != nil {
+		log.Fatalf("failed to bind pflag \"%s\" %s", name, err.Error())
+	}
+	return nil
+}
+
 func BuildAll() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:               "handwitch",
@@ -49,14 +57,8 @@ func BuildAll() *cobra.Command {
 	rootCmd.PersistentFlags().String("log", "info", "log level [info|warn|debug]")
 	rootCmd.PersistentFlags().String("config", "", "configuration path file")
 	rootCmd.PersistentFlags().String("path", "", "descriptions file path")
-	err := viper.BindPFlag("log", rootCmd.PersistentFlags().Lookup("log"))
-	if err != nil {
-		log.Fatalf("failed to bind pflag \"log\" %s", err.Error())
-	}
-	err = viper.BindPFlag("path", rootCmd.PersistentFlags().Lookup("path"))
-	if err != nil {
-		log.Fatalf("failed to bind pflag \"path\" %s", err.Error())
-	}
+	bindFlag(rootCmd, "log", "log")
+	bindFlag(rootCmd, "path", "path")
 	registerServeBot(rootCmd)
 	return rootCmd
 }
