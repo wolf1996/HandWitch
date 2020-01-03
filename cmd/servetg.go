@@ -61,19 +61,6 @@ func getAuthSourceFromFile(path string) (bot.Authorisation, error) {
 	return authSource, err
 }
 
-func getConfigFromPath(path string) (*bot.Config, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	reader := bufio.NewReader(file)
-	botConfig, err := bot.GetConfigFromJSON(reader)
-	if err != nil {
-		return nil, err
-	}
-	return botConfig, nil
-}
-
 func exec(cmd *cobra.Command, args []string) {
 
 	loglevelStr := viper.GetString("log")
@@ -161,7 +148,7 @@ func exec(cmd *cobra.Command, args []string) {
 	}
 }
 
-func registerServeBot(parentCmd *cobra.Command) {
+func registerServeBot(parentCmd *cobra.Command) (*cobra.Command, error) {
 	comand := cobra.Command{
 		Use:   "serve",
 		Short: "Starts bot",
@@ -171,8 +158,18 @@ func registerServeBot(parentCmd *cobra.Command) {
 	comand.PersistentFlags().String("whitelist", "", "configuration path file")
 	comand.PersistentFlags().String("formating", "", "descriptions file path")
 	comand.PersistentFlags().String("tgproxy", "", "proxy to telegram client")
-	bindFlag(&comand, "telegram.white_list", "whitelist")
-	bindFlag(&comand, "telegram.formating", "formating")
-	bindFlag(&comand, "telegram.proxy", "tgproxy")
+	err := bindFlag(&comand, "telegram.white_list", "whitelist")
+	if err != nil {
+		return &comand, err
+	}
+	err = bindFlag(&comand, "telegram.formating", "formating")
+	if err != nil {
+		return &comand, err
+	}
+	err = bindFlag(&comand, "telegram.proxy", "tgproxy")
+	if err != nil {
+		return &comand, err
+	}
 	parentCmd.AddCommand(&comand)
+	return &comand, nil
 }

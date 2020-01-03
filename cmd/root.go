@@ -48,7 +48,7 @@ func bindFlag(cmd *cobra.Command, conf string, name string) error {
 	return nil
 }
 
-func BuildAll() *cobra.Command {
+func BuildAll() (*cobra.Command, error) {
 	rootCmd := &cobra.Command{
 		Use:               "handwitch",
 		PersistentPreRunE: prerunRoot,
@@ -57,8 +57,17 @@ func BuildAll() *cobra.Command {
 	rootCmd.PersistentFlags().String("log", "info", "log level [info|warn|debug]")
 	rootCmd.PersistentFlags().String("config", "", "configuration path file")
 	rootCmd.PersistentFlags().String("path", "", "descriptions file path")
-	bindFlag(rootCmd, "log", "log")
-	bindFlag(rootCmd, "path", "path")
-	registerServeBot(rootCmd)
-	return rootCmd
+	err := bindFlag(rootCmd, "log", "log")
+	if err != nil {
+		return nil, err
+	}
+	err = bindFlag(rootCmd, "path", "path")
+	if err != nil {
+		return nil, err
+	}
+	_, err = registerServeBot(rootCmd)
+	if err != nil {
+		return nil, err
+	}
+	return rootCmd, nil
 }
