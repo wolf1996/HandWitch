@@ -58,6 +58,19 @@ func getAuthSourceFromFile(path string) (bot.Authorisation, error) {
 	return authSource, err
 }
 
+func buildHttpClient(proxyUrl string, log *log.Logger) (*http.Client, error) {
+	if proxyUrl != "" {
+		log.Infof("Got Proxy %s", proxyUrl)
+		client, err := bot.GetClientWithProxy(proxyUrl)
+		if err != nil {
+			return nil, err
+		}
+		return client, nil
+	}
+	log.Info("Got No Proxy")
+	return http.DefaultClient, nil
+}
+
 func exec(cmd *cobra.Command, args []string) error {
 	loglevelStr := viper.GetString("log_level")
 	loglevel, err := log.ParseLevel(loglevelStr)
@@ -78,21 +91,15 @@ func exec(cmd *cobra.Command, args []string) error {
 	formating := viper.GetString("telegram.formating")
 	logger.Infof("Used formating: %s", formating)
 
-	tgproxy := viper.GetString("telegram.proxy")
-	logger.Infof("Used proxy for telegram client: %s", tgproxy)
+	telegramProxy := viper.GetString("telegram.proxy")
+	logger.Infof("Used proxy for telegram client: %s", telegramProxy)
 
 	token := cmd.Flags().Lookup("token").Value.String()
 
-	client := http.DefaultClient
-	if tgproxy != "" {
-		log.Infof("Got Proxy %s", tgproxy)
-		client, err = bot.GetClientWithProxy(tgproxy)
-		if err != nil {
-			logger.Errorf("Failed to create http client with proxy %s", err.Error())
-			return nil
-		}
-	} else {
-		log.Info("Got No Proxy")
+	httpClient, err := buildHttpClient(telegramProxy, logger)
+	if err != nil {
+		logger.Errorf("Failed to build http client with proxy %s error: %s", telegramProxy, err.Error())
+		return nil
 	}
 
 	// пытаемся собрать список разрешённых пользователей
@@ -118,7 +125,7 @@ func exec(cmd *cobra.Command, args []string) error {
 	}
 
 	log.Info("Creating telegram bot api client")
-	botInstance, err := bot.NewBot(client, token, *urlContainer, auth, formating)
+	botInstance, err := bot.NewBot(httpClient, token, *urlContainer, auth, formating)
 	if err != nil {
 		logger.Errorf("Failed to create bot %s", err.Error())
 		return nil
