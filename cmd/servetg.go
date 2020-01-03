@@ -71,6 +71,21 @@ func buildHttpClient(proxyUrl string, log *log.Logger) (*http.Client, error) {
 	return http.DefaultClient, nil
 }
 
+func buildTelegramAuth(authPath string, log *log.Logger) (bot.Authorisation, error) {
+
+	// пытаемся собрать список разрешённых пользователей
+	// если такой список не указан - открыты всем ветрам
+	if authPath != "" {
+		auth, err := getAuthSourceFromFile(authPath)
+		if err != nil {
+			return nil, fmt.Errorf("Failed to get auth %s, stop", err.Error())
+		}
+		return auth, nil
+	}
+	log.Info("No whitelist found starting with dummy auth")
+	return bot.DummyAuthorisation{}, nil
+}
+
 func exec(cmd *cobra.Command, args []string) error {
 	loglevelStr := viper.GetString("log_level")
 	loglevel, err := log.ParseLevel(loglevelStr)
@@ -102,18 +117,10 @@ func exec(cmd *cobra.Command, args []string) error {
 		return nil
 	}
 
-	// пытаемся собрать список разрешённых пользователей
-	// если такой список не указан - доступны всем ветрам
-	var auth bot.Authorisation
-	if whitelist != "" {
-		auth, err = getAuthSourceFromFile(whitelist)
-		if err != nil {
-			logger.Errorf("Failed to get auth %s, stop", err.Error())
-			return nil
-		}
-	} else {
-		auth = bot.DummyAuthorisation{}
-		log.Info("No whitelist found starting with dummy auth")
+	auth, err := buildTelegramAuth(whitelist, logger)
+	if err != nil {
+		logger.Errorf("Failed to load whitelist %s", err.Error())
+		return nil
 	}
 
 	// грузим описания ручек
