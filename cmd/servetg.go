@@ -1,17 +1,78 @@
 package cmd
 
 import (
+	"bufio"
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	bot "github.com/wolf1996/HandWitch/pkg/bot"
+	"github.com/wolf1996/HandWitch/pkg/core"
 )
+
+func getDescriptionSourceFromFile(path string) (*core.URLProcessor, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	reader := bufio.NewReader(file)
+	ext := filepath.Ext(path)
+	var descriptionSource core.DescriptionsSource
+	switch ext {
+	case ".yaml":
+		descriptionSource, err = core.GetDescriptionSourceFromYAML(reader)
+		if err != nil {
+			return nil, err
+		}
+
+	case ".json":
+		descriptionSource, err = core.GetDescriptionSourceFromJSON(reader)
+		if err != nil {
+			return nil, err
+		}
+	default:
+		return nil, fmt.Errorf("Unknown file extension %s", ext)
+	}
+	if err != nil {
+		return nil, err
+	}
+	processor := core.NewURLProcessor(descriptionSource, http.DefaultClient)
+	//TODO: попробовать поправить ссылки и интерфейсы
+	return &processor, nil
+}
+
+func getAuthSourceFromFile(path string) (bot.Authorisation, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	reader := bufio.NewReader(file)
+	authSource, err := bot.GetAuthSourceFromJSON(reader)
+	if err != nil {
+		return nil, err
+	}
+	return authSource, err
+}
+
+func getConfigFromPath(path string) (*bot.Config, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	reader := bufio.NewReader(file)
+	botConfig, err := bot.GetConfigFromJSON(reader)
+	if err != nil {
+		return nil, err
+	}
+	return botConfig, nil
+}
 
 func exec(cmd *cobra.Command, args []string) {
 
