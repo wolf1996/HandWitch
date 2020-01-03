@@ -88,7 +88,8 @@ func exec(cmd *cobra.Command, args []string) error {
 		log.Infof("Got Proxy %s", tgproxy)
 		client, err = bot.GetClientWithProxy(tgproxy)
 		if err != nil {
-			return fmt.Errorf("Failed to create http client with proxy %s", err.Error())
+			logger.Errorf("Failed to create http client with proxy %s", err.Error())
+			return nil
 		}
 	} else {
 		log.Info("Got No Proxy")
@@ -100,7 +101,8 @@ func exec(cmd *cobra.Command, args []string) error {
 	if whitelist != "" {
 		auth, err = getAuthSourceFromFile(whitelist)
 		if err != nil {
-			return fmt.Errorf("Failed to get auth %s, stop", err.Error())
+			logger.Errorf("Failed to get auth %s, stop", err.Error())
+			return nil
 		}
 	} else {
 		auth = bot.DummyAuthorisation{}
@@ -111,13 +113,15 @@ func exec(cmd *cobra.Command, args []string) error {
 	log.Infof("Description file path used %s", path)
 	urlContainer, err := getDescriptionSourceFromFile(path)
 	if err != nil {
-		return fmt.Errorf("Failed to get description source file %s", err.Error())
+		logger.Errorf("Failed to get description source file %s", err.Error())
+		return nil
 	}
 
 	log.Info("Creating telegram bot api client")
 	botInstance, err := bot.NewBot(client, token, *urlContainer, auth, formating)
 	if err != nil {
-		return fmt.Errorf("Failed to create bot %s", err.Error())
+		logger.Errorf("Failed to create bot %s", err.Error())
+		return nil
 	}
 
 	log.Info("Telegram bot api client created")
@@ -126,7 +130,8 @@ func exec(cmd *cobra.Command, args []string) error {
 
 	err = botInstance.Listen(ctx, logger)
 	if err != nil {
-		log.Infof("Stopping bot %s", err.Error())
+		logger.Errorf("Stopping bot %s", err.Error())
+		return nil
 	}
 	return nil
 }
