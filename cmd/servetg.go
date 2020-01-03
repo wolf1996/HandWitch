@@ -2,13 +2,10 @@ package cmd
 
 import (
 	"bufio"
-	"context"
 	"fmt"
 	"net/http"
 	"os"
-	"os/signal"
 	"path/filepath"
-	"syscall"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -62,7 +59,6 @@ func getAuthSourceFromFile(path string) (bot.Authorisation, error) {
 }
 
 func exec(cmd *cobra.Command, args []string) {
-
 	loglevelStr := viper.GetString("log_level")
 	loglevel, err := log.ParseLevel(loglevelStr)
 	if err != nil {
@@ -126,21 +122,7 @@ func exec(cmd *cobra.Command, args []string) {
 
 	log.Info("Telegram bot api client created")
 
-	// Вешаем обработчики сигналов на контекст
-	ctx, cancel := context.WithCancel(context.Background())
-	sysSignals := make(chan os.Signal, 1)
-
-	signal.Notify(sysSignals,
-		syscall.SIGHUP,
-		syscall.SIGINT,
-		syscall.SIGTERM,
-		syscall.SIGQUIT)
-
-	go func() {
-		signal := <-sysSignals
-		log.Infof("Got %s system signal, aborting...", signal)
-		cancel()
-	}()
+	ctx := buildSystemContext(logger)
 
 	err = botInstance.Listen(ctx, logger)
 	if err != nil {

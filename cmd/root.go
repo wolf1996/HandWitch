@@ -1,7 +1,11 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -38,6 +42,25 @@ func prerunRoot(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+func buildSystemContext(log *log.Logger) context.Context {
+	// Вешаем обработчики сигналов на контекст
+	ctx, cancel := context.WithCancel(context.Background())
+	sysSignals := make(chan os.Signal, 1)
+
+	signal.Notify(sysSignals,
+		syscall.SIGHUP,
+		syscall.SIGINT,
+		syscall.SIGTERM,
+		syscall.SIGQUIT)
+
+	go func() {
+		signal := <-sysSignals
+		log.Infof("Got %s system signal, aborting...", signal)
+		cancel()
+	}()
+	return ctx
 }
 
 func bindFlag(cmd *cobra.Command, conf string, name string) error {
