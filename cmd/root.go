@@ -86,7 +86,21 @@ func buildRootCmd() (*cobra.Command, error) {
 	rootCmd.PersistentFlags().String("log", "info", "log level [info|warn|debug]")
 	rootCmd.PersistentFlags().String("config", "", "configuration path file")
 	rootCmd.PersistentFlags().String("path", "", "descriptions file path")
-	err := bindFlag(rootCmd, "log_level", "log")
+
+	err := rootCmd.MarkPersistentFlagFilename("config")
+	if err != nil {
+		return nil, err
+	}
+	err = rootCmd.MarkPersistentFlagRequired("config")
+	if err != nil {
+		return nil, err
+	}
+	err = rootCmd.MarkPersistentFlagFilename("path")
+	if err != nil {
+		return nil, err
+	}
+
+	err = bindFlag(rootCmd, "log_level", "log")
 	if err != nil {
 		return nil, err
 	}

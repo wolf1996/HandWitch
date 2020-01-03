@@ -141,7 +141,13 @@ func registerServeBot(parentCmd *cobra.Command) (*cobra.Command, error) {
 	comand.PersistentFlags().String("whitelist", "", "configuration path file")
 	comand.PersistentFlags().String("formating", "", "descriptions file path")
 	comand.PersistentFlags().String("tgproxy", "", "proxy to telegram client")
-	err := bindFlag(&comand, "telegram.white_list", "whitelist")
+
+	err := comand.MarkPersistentFlagRequired("token")
+	if err != nil {
+		return &comand, err
+	}
+
+	err = bindFlag(&comand, "telegram.white_list", "whitelist")
 	if err != nil {
 		return &comand, err
 	}
