@@ -63,7 +63,7 @@ func getAuthSourceFromFile(path string) (bot.Authorisation, error) {
 
 func exec(cmd *cobra.Command, args []string) {
 
-	loglevelStr := viper.GetString("log")
+	loglevelStr := viper.GetString("log_level")
 	loglevel, err := log.ParseLevel(loglevelStr)
 	if err != nil {
 		log.Fatalf("Failed to parse LogLevel %s", err.Error())

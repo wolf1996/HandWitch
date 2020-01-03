@@ -23,7 +23,7 @@ func prerunRoot(cmd *cobra.Command, args []string) error {
 
 	loglevel, err := log.ParseLevel(logLevel)
 	if err != nil {
-		log.Fatalf("Failed to parse LogLevel %s", err.Error())
+		return err
 	}
 	log.SetLevel(loglevel)
 
@@ -33,7 +33,7 @@ func prerunRoot(cmd *cobra.Command, args []string) error {
 	if configPath != "" {
 		err = initConfig(configPath)
 		if err != nil {
-			log.Fatalf("Failed to parse config %s", err.Error())
+			return err
 		}
 	}
 
@@ -43,7 +43,7 @@ func prerunRoot(cmd *cobra.Command, args []string) error {
 func bindFlag(cmd *cobra.Command, conf string, name string) error {
 	err := viper.BindPFlag(conf, cmd.PersistentFlags().Lookup(name))
 	if err != nil {
-		log.Fatalf("failed to bind pflag \"%s\" %s", name, err.Error())
+		return err
 	}
 	return nil
 }
@@ -57,7 +57,7 @@ func BuildAll() (*cobra.Command, error) {
 	rootCmd.PersistentFlags().String("log", "info", "log level [info|warn|debug]")
 	rootCmd.PersistentFlags().String("config", "", "configuration path file")
 	rootCmd.PersistentFlags().String("path", "", "descriptions file path")
-	err := bindFlag(rootCmd, "log", "log")
+	err := bindFlag(rootCmd, "log_level", "log")
 	if err != nil {
 		return nil, err
 	}
