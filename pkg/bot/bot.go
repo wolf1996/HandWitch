@@ -28,7 +28,7 @@ type Bot struct {
 func NewBot(client *http.Client, token string, app core.URLProcessor, auth Authorisation, formating string) (*Bot, error) {
 	bot, err := tgbotapi.NewBotAPIWithClient(token, client)
 	if err != nil {
-		log.Fatalf(err.Error())
+		return nil, fmt.Errorf("failed create new bot api with client %s", err.Error())
 	}
 	log.Infof("Authorized on account %s", bot.Self.UserName)
 	nrms, err := normilizeMessageMode(formating)

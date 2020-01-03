@@ -58,11 +58,11 @@ func getAuthSourceFromFile(path string) (bot.Authorisation, error) {
 	return authSource, err
 }
 
-func exec(cmd *cobra.Command, args []string) {
+func exec(cmd *cobra.Command, args []string) error {
 	loglevelStr := viper.GetString("log_level")
 	loglevel, err := log.ParseLevel(loglevelStr)
 	if err != nil {
-		log.Fatalf("Failed to parse LogLevel %s", err.Error())
+		return fmt.Errorf("Failed to parse LogLevel %s", err.Error())
 	}
 	logger := log.StandardLogger()
 	logger.Infof("Used config: %s", viper.ConfigFileUsed())
@@ -88,7 +88,7 @@ func exec(cmd *cobra.Command, args []string) {
 		log.Infof("Got Proxy %s", tgproxy)
 		client, err = bot.GetClientWithProxy(tgproxy)
 		if err != nil {
-			log.Fatalf("Failed to create http client with proxy %s", err.Error())
+			return fmt.Errorf("Failed to create http client with proxy %s", err.Error())
 		}
 	} else {
 		log.Info("Got No Proxy")
@@ -100,7 +100,7 @@ func exec(cmd *cobra.Command, args []string) {
 	if whitelist != "" {
 		auth, err = getAuthSourceFromFile(whitelist)
 		if err != nil {
-			log.Fatalf("Failed to get auth %s, stop", err.Error())
+			return fmt.Errorf("Failed to get auth %s, stop", err.Error())
 		}
 	} else {
 		auth = bot.DummyAuthorisation{}
@@ -111,13 +111,13 @@ func exec(cmd *cobra.Command, args []string) {
 	log.Infof("Description file path used %s", path)
 	urlContainer, err := getDescriptionSourceFromFile(path)
 	if err != nil {
-		log.Fatalf("Failed to get description source file %s", err.Error())
+		return fmt.Errorf("Failed to get description source file %s", err.Error())
 	}
 
 	log.Info("Creating telegram bot api client")
 	botInstance, err := bot.NewBot(client, token, *urlContainer, auth, formating)
 	if err != nil {
-		log.Fatalf("Failed to create bot %s", err.Error())
+		return fmt.Errorf("Failed to create bot %s", err.Error())
 	}
 
 	log.Info("Telegram bot api client created")
@@ -128,13 +128,14 @@ func exec(cmd *cobra.Command, args []string) {
 	if err != nil {
 		log.Infof("Stopping bot %s", err.Error())
 	}
+	return nil
 }
 
 func registerServeBot(parentCmd *cobra.Command) (*cobra.Command, error) {
 	comand := cobra.Command{
 		Use:   "serve",
 		Short: "Starts bot",
-		Run:   exec,
+		RunE:  exec,
 	}
 	comand.PersistentFlags().String("token", "info", "log level [info|warn|debug]")
 	comand.PersistentFlags().String("whitelist", "", "configuration path file")
