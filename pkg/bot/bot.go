@@ -2,6 +2,7 @@ package bot
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -28,12 +29,12 @@ type Bot struct {
 func NewBot(client *http.Client, token string, app core.URLProcessor, auth Authorisation, formating string) (*Bot, error) {
 	bot, err := tgbotapi.NewBotAPIWithClient(token, client)
 	if err != nil {
-		return nil, fmt.Errorf("failed create new bot api with client %s", err.Error())
+		return nil, fmt.Errorf("failed create new bot api with client %w", err)
 	}
 	log.Infof("Authorized on account %s", bot.Self.UserName)
 	nrms, err := normilizeMessageMode(formating)
 	if err != nil {
-		return nil, fmt.Errorf("Invalid formating %s", err.Error())
+		return nil, fmt.Errorf("Invalid formating %w", err)
 	}
 	return &Bot{
 		api:       bot,
@@ -84,7 +85,7 @@ func (b *Bot) getHandParams(handProcessor core.HandProcessor, messageArguments s
 
 func (b *Bot) processHand(ctx context.Context, writer io.Writer, messageArguments string, logger *log.Entry) error {
 	if messageArguments == "" {
-		return fmt.Errorf("Empty arguments")
+		return errors.New("Empty arguments")
 	}
 	handName, err := b.getHandName(messageArguments)
 	if err != nil {

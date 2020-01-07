@@ -78,7 +78,7 @@ func buildTelegramAuth(authPath string, log *log.Logger) (bot.Authorisation, err
 	if authPath != "" {
 		auth, err := getAuthSourceFromFile(authPath)
 		if err != nil {
-			return nil, fmt.Errorf("Failed to get auth %s, stop", err.Error())
+			return nil, fmt.Errorf("Failed to get auth %w, stop", err)
 		}
 		return auth, nil
 	}
@@ -90,7 +90,7 @@ func exec(cmd *cobra.Command, args []string) error {
 	loglevelStr := viper.GetString("log_level")
 	loglevel, err := log.ParseLevel(loglevelStr)
 	if err != nil {
-		return fmt.Errorf("Failed to parse LogLevel %s", err.Error())
+		return fmt.Errorf("Failed to parse LogLevel %w", err)
 	}
 	logger := log.StandardLogger()
 	logger.Infof("Used config: %s", viper.ConfigFileUsed())

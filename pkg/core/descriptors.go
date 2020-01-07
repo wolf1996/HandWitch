@@ -46,15 +46,15 @@ func NewHandProcessor(rec *URLRecord, client *http.Client) (HandProcessor, error
 func (processor *HandProcessorImp) WriteHelp(writer io.Writer) error {
 	_, err := io.WriteString(writer, fmt.Sprintf("Name: %s\n", processor.URLName))
 	if err != nil {
-		return fmt.Errorf("Error while writing name %s", err.Error())
+		return fmt.Errorf("Error while writing name %w", err)
 	}
 	_, err = io.WriteString(writer, fmt.Sprintf("URL template: %s\n", processor.URLTemplate))
 	if err != nil {
-		return fmt.Errorf("Error while writing URL template %s", err.Error())
+		return fmt.Errorf("Error while writing URL template %w", err)
 	}
 	_, err = io.WriteString(writer, fmt.Sprintf("Parameters:\n"))
 	if err != nil {
-		return fmt.Errorf("Error while writing URL parameters header %s", err.Error())
+		return fmt.Errorf("Error while writing URL parameters header %w", err)
 	}
 	var keys []string
 	for key := range processor.URLRecord.Parameters {
@@ -64,11 +64,11 @@ func (processor *HandProcessorImp) WriteHelp(writer io.Writer) error {
 	for _, key := range keys {
 		proc, _ := processor.GetParam(key)
 		if err != nil {
-			return fmt.Errorf("Error while writing get parameter help for key %s: %s", key, err.Error())
+			return fmt.Errorf("Error while writing get parameter help for key %s: %w", key, err)
 		}
 		err = proc.WriteHelp(writer)
 		if err != nil {
-			return fmt.Errorf("Error while writing parameters help for key %s: %s", key, err.Error())
+			return fmt.Errorf("Error while writing parameters help for key %s: %w", key, err)
 		}
 	}
 	return nil
@@ -94,16 +94,16 @@ func (processor *HandProcessorImp) Process(ctx context.Context, writer io.Writer
 	url := new(bytes.Buffer)
 	tmp, err := template.New(processor.URLName).Parse(processor.URLTemplate)
 	if err != nil {
-		return fmt.Errorf("Failed to build URL template %s", err.Error())
+		return fmt.Errorf("Failed to build URL template %w", err)
 	}
 	err = tmp.Execute(url, params)
 	if err != nil {
-		return fmt.Errorf("Failed to build URL %s", err.Error())
+		return fmt.Errorf("Failed to build URL %w", err)
 	}
 	logger.Debugf("Got URL %s", url.String())
 	req, err := http.NewRequestWithContext(ctx, "GET", url.String(), nil)
 	if err != nil {
-		return fmt.Errorf("Failed to build request %s", err.Error())
+		return fmt.Errorf("Failed to build request %w", err)
 	}
 	processor.addQueryParams(req, params)
 	logger.Debugf("Got request %s", func() string {
@@ -115,7 +115,7 @@ func (processor *HandProcessorImp) Process(ctx context.Context, writer io.Writer
 	}())
 	responce, err := processor.client.Do(req)
 	if err != nil {
-		return fmt.Errorf("Failed to read result %s", err.Error())
+		return fmt.Errorf("Failed to read result %w", err)
 	}
 	logger.Debugf("Got responce %s", func() string {
 		bytes, err := httputil.DumpResponse(responce, true)
@@ -127,11 +127,11 @@ func (processor *HandProcessorImp) Process(ctx context.Context, writer io.Writer
 	responceData := make(map[string]interface{})
 	err = json.NewDecoder(responce.Body).Decode(&responceData)
 	if err != nil {
-		return fmt.Errorf("Failed to decode json result %s", err.Error())
+		return fmt.Errorf("Failed to decode json result %w", err)
 	}
 	template, err := processor.compileTemplate(processor.URLRecord, params)
 	if err != nil {
-		return fmt.Errorf("Failed to build request %s", err.Error())
+		return fmt.Errorf("Failed to build request %w", err)
 	}
 	templateData := map[string]interface{}{
 		"responce": responceData,
@@ -142,9 +142,9 @@ func (processor *HandProcessorImp) Process(ctx context.Context, writer io.Writer
 	}
 	err = template.Lookup(processor.URLRecord.URLName).Execute(writer, templateData)
 	if err != nil {
-		return fmt.Errorf("Failed to execute %s", err.Error())
+		return fmt.Errorf("Failed to execute %w", err)
 	}
-	return err
+	return nil
 }
 
 //GetInfo get row data
@@ -176,11 +176,11 @@ func NewParamProcessor(info ParamInfo) ParamProcessorImp {
 func (p *ParamProcessorImp) WriteHelp(writer io.Writer) error {
 	destination, err := p.Destination.ToString()
 	if err != nil {
-		return fmt.Errorf("Error while destination help converting %s", err.Error())
+		return fmt.Errorf("Error while destination help converting %w", err)
 	}
 	typeStr, err := p.Type.ToString()
 	if err != nil {
-		return fmt.Errorf("Error while Type help converting %s", err.Error())
+		return fmt.Errorf("Error while Type help converting %w", err)
 	}
 	res := fmt.Sprintf(
 		"%s(%s)\t%s\n\t%s\n",

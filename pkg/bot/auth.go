@@ -2,9 +2,13 @@ package bot
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"io/ioutil"
 )
+
+// ErrUserNotFound if there are no information about user role
+var ErrUserNotFound = errors.New("User role not found")
 
 // Role is a role user in system
 // user can be Gueest (without permissions) and User with all permissions
@@ -64,5 +68,5 @@ func (list *UsersList) GetRoleByLogin(userLogin string) (Role, error) {
 	if _, contains := list.users[userLogin]; contains {
 		return User, nil
 	}
-	return Guest, nil
+	return Guest, ErrUserNotFound
 }
