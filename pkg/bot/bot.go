@@ -116,10 +116,10 @@ func (b *Bot) helpHand(ctx context.Context, writer io.Writer, messageArguments s
 func (b *Bot) executeMessage(ctx context.Context, writer io.Writer, message *tgbotapi.Message, logger *log.Entry) error {
 	switch message.Command() {
 	case "process":
-		logger.Debugf("found \"process\" command")
+		logger.Debug("found \"process\" command")
 		return b.processHand(ctx, writer, message.CommandArguments(), logger)
 	case "help":
-		logger.Debugf("found \"help\" command")
+		logger.Debug("found \"help\" command")
 		return b.helpHand(ctx, writer, message.CommandArguments())
 	}
 	return fmt.Errorf("Wrong comand %s", message.Command())
