@@ -199,8 +199,17 @@ func (b *Bot) handleMessage(ctx context.Context, message *tgbotapi.Message, logg
 		// создаём хэндлер этого задания
 		input := b.initMessageHandle(ctx, message, logger)
 		b.processing[key] = input
+	} else {
+		select {
+		case taskChan <- message:
+			{
+			}
+		case <-ctx.Done():
+			{
+				return fmt.Errorf("message was not sent, canceled")
+			}
+		}
 	}
-	taskChan <- message
 	return nil
 }
 
