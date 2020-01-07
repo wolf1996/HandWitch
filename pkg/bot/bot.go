@@ -15,12 +15,29 @@ import (
 	"github.com/wolf1996/HandWitch/pkg/core"
 )
 
+type (
+	taskKey struct {
+		ChatId int64
+		UserId string
+	}
+
+	inProgresTask = map[taskKey]chan *tgbotapi.Message
+)
+
+func getTaskKeyFromMessage(message *tgbotapi.Message) (taskKey, error) {
+	return taskKey{
+		ChatId: message.Chat.ID,
+		UserId: message.From.UserName,
+	}, nil
+}
+
 // Bot создаёт общий интерфейс для бота
 type Bot struct {
-	api       *tgbotapi.BotAPI
-	app       core.URLProcessor
-	auth      Authorisation
-	formating string
+	api        *tgbotapi.BotAPI
+	app        core.URLProcessor
+	auth       Authorisation
+	formating  string
+	processing inProgresTask
 }
 
 //TODO: проверить каноничность
@@ -32,15 +49,16 @@ func NewBot(client *http.Client, token string, app core.URLProcessor, auth Autho
 		return nil, fmt.Errorf("failed create new bot api with client %w", err)
 	}
 	log.Infof("Authorized on account %s", bot.Self.UserName)
-	nrms, err := normilizeMessageMode(formating)
+	normalizedMessageMode, err := normilizeMessageMode(formating)
 	if err != nil {
 		return nil, fmt.Errorf("Invalid formating %w", err)
 	}
 	return &Bot{
-		api:       bot,
-		app:       app,
-		auth:      auth,
-		formating: nrms,
+		api:        bot,
+		app:        app,
+		auth:       auth,
+		formating:  normalizedMessageMode,
+		processing: make(inProgresTask),
 	}, nil
 }
 
@@ -83,7 +101,7 @@ func (b *Bot) getHandParams(handProcessor core.HandProcessor, messageArguments s
 	return result, nil
 }
 
-func (b *Bot) processHand(ctx context.Context, writer io.Writer, messageArguments string, logger *log.Entry) error {
+func (b *Bot) processHand(ctx context.Context, writer io.Writer, messageArguments string, message *tgbotapi.Message, input chan *tgbotapi.Message, logger *log.Entry) error {
 	if messageArguments == "" {
 		return errors.New("Empty arguments")
 	}
@@ -102,7 +120,7 @@ func (b *Bot) processHand(ctx context.Context, writer io.Writer, messageArgument
 	return handProcessor.Process(ctx, writer, params, logger)
 }
 
-func (b *Bot) helpHand(ctx context.Context, writer io.Writer, messageArguments string) error {
+func (b *Bot) helpHand(ctx context.Context, writer io.Writer, messageArguments string, logger *log.Entry) error {
 	if messageArguments == "" {
 		return fmt.Errorf("Empty arguments")
 	}
@@ -113,14 +131,14 @@ func (b *Bot) helpHand(ctx context.Context, writer io.Writer, messageArguments s
 	return handProcessor.WriteHelp(writer)
 }
 
-func (b *Bot) executeMessage(ctx context.Context, writer io.Writer, message *tgbotapi.Message, logger *log.Entry) error {
+func (b *Bot) executeMessage(ctx context.Context, writer io.Writer, message *tgbotapi.Message, input chan *tgbotapi.Message, logger *log.Entry) error {
 	switch message.Command() {
 	case "process":
 		logger.Debug("found \"process\" command")
-		return b.processHand(ctx, writer, message.CommandArguments(), logger)
+		return b.processHand(ctx, writer, message.CommandArguments(), message, input, logger)
 	case "help":
 		logger.Debug("found \"help\" command")
-		return b.helpHand(ctx, writer, message.CommandArguments())
+		return b.helpHand(ctx, writer, message.CommandArguments(), logger)
 	}
 	return fmt.Errorf("Wrong comand %s", message.Command())
 }
@@ -135,9 +153,9 @@ func normilizeMessageMode(raw string) (string, error) {
 	return "", fmt.Errorf("Invalid message mode %s", raw)
 }
 
-func (b *Bot) newHandleMessage(ctx context.Context, message *tgbotapi.Message, logger *log.Entry) {
+func (b *Bot) newHandleMessage(ctx context.Context, message *tgbotapi.Message, input chan *tgbotapi.Message, logger *log.Entry) {
 	var resp bytes.Buffer
-	err := b.executeMessage(ctx, &resp, message, logger)
+	err := b.executeMessage(ctx, &resp, message, input, logger)
 	if err != nil {
 		errmsg := fmt.Sprintf("Error on processing message %s: %s", message.Text, err.Error())
 		msg := tgbotapi.NewMessage(message.Chat.ID, errmsg)
@@ -165,35 +183,53 @@ func (b *Bot) checkMessageAuth(message *tgbotapi.Message) (bool, error) {
 	return role == User, nil
 }
 
-func (b *Bot) handleMessage(ctx context.Context, message *tgbotapi.Message, logger *log.Entry) {
-	go b.newHandleMessage(ctx, message, logger)
+func (b *Bot) initMessageHandle(ctx context.Context, message *tgbotapi.Message, logger *log.Entry) chan *tgbotapi.Message {
+	input := make(chan *tgbotapi.Message)
+	go b.newHandleMessage(ctx, message, input, logger)
+	return input
 }
 
-func (b *Bot) processUpdate(ctx context.Context, update tgbotapi.Update, logger *log.Entry) {
+func (b *Bot) handleMessage(ctx context.Context, message *tgbotapi.Message, logger *log.Entry) error {
+	key, err := getTaskKeyFromMessage(message)
+	if err != nil {
+		return fmt.Errorf("Failed to get task key %w", err)
+	}
+	taskChan, ok := b.processing[key]
+	if !ok {
+		// создаём хэндлер этого задания
+		input := b.initMessageHandle(ctx, message, logger)
+		b.processing[key] = input
+	}
+	taskChan <- message
+	return nil
+}
+
+// TODO: думаю таки будет иметь смысл сделать тут возврат ошибки
+func (b *Bot) processUpdate(ctx context.Context, update tgbotapi.Update, logger *log.Entry) error {
 	if update.Message == nil { // ignore any non-Message Updates
 		logger.Debugf("No message in update skipping")
-		return
+		return nil
 	}
 	if !update.Message.IsCommand() {
 		// ignore non-Command  Updates
 		logger.Debugf("No command in message update skipping")
-		return
+		return nil
 	}
 	allowed, err := b.checkMessageAuth(update.Message)
 	if err != nil {
 		logger.Errorf("Failed to check user role %s", err.Error())
-		return
+		return nil
 	}
 	if !allowed {
 		logger.Warnf("User %s has a \"Guest\" role, ignore", update.Message.From.UserName)
-		return
+		return nil
 	}
 	logger.Debugf("Got message [%s] %s", update.Message.From.UserName, update.Message.Text)
 	messageLogger := logger.WithFields(log.Fields{
 		"user_login":   update.Message.From.UserName,
 		"message_text": update.Message.Text,
 	})
-	b.handleMessage(ctx, update.Message, messageLogger)
+	return b.handleMessage(ctx, update.Message, messageLogger)
 }
 
 // Listen слушаем сообщения и отправляем ответ
