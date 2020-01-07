@@ -207,6 +207,7 @@ func (b *Bot) handleMessage(ctx context.Context, message *tgbotapi.Message, logg
 				}
 			case <-ctx.Done():
 				{
+					logger.Errorf("Failed to send message to task, canceled")
 				}
 			}
 		}()
