@@ -200,15 +200,16 @@ func (b *Bot) handleMessage(ctx context.Context, message *tgbotapi.Message, logg
 		input := b.initMessageHandle(ctx, message, logger)
 		b.processing[key] = input
 	} else {
-		select {
-		case taskChan <- message:
-			{
+		go func() {
+			select {
+			case taskChan <- message:
+				{
+				}
+			case <-ctx.Done():
+				{
+				}
 			}
-		case <-ctx.Done():
-			{
-				return fmt.Errorf("message was not sent, canceled")
-			}
-		}
+		}()
 	}
 	return nil
 }
