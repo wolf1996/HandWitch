@@ -135,7 +135,7 @@ func normilizeMessageMode(raw string) (string, error) {
 	return "", fmt.Errorf("Invalid message mode %s", raw)
 }
 
-func (b *Bot) handleMessage(ctx context.Context, message *tgbotapi.Message, logger *log.Entry) {
+func (b *Bot) newHandleMessage(ctx context.Context, message *tgbotapi.Message, logger *log.Entry) {
 	var resp bytes.Buffer
 	err := b.executeMessage(ctx, &resp, message, logger)
 	if err != nil {
@@ -165,6 +165,10 @@ func (b *Bot) checkMessageAuth(message *tgbotapi.Message) (bool, error) {
 	return role == User, nil
 }
 
+func (b *Bot) handleMessage(ctx context.Context, message *tgbotapi.Message, logger *log.Entry) {
+	go b.newHandleMessage(ctx, message, logger)
+}
+
 func (b *Bot) processUpdate(ctx context.Context, update tgbotapi.Update, logger *log.Entry) {
 	if update.Message == nil { // ignore any non-Message Updates
 		logger.Debugf("No message in update skipping")
@@ -189,7 +193,7 @@ func (b *Bot) processUpdate(ctx context.Context, update tgbotapi.Update, logger 
 		"user_login":   update.Message.From.UserName,
 		"message_text": update.Message.Text,
 	})
-	go b.handleMessage(ctx, update.Message, messageLogger)
+	b.handleMessage(ctx, update.Message, messageLogger)
 }
 
 // Listen слушаем сообщения и отправляем ответ
