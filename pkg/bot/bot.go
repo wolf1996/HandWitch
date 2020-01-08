@@ -164,11 +164,13 @@ func (b *Bot) newHandleMessage(ctx context.Context, message *tgbotapi.Message, i
 			logger.Errorf("Error on sending message %s", err.Error())
 		}
 	}
+
 	msg := tgbotapi.NewMessage(message.Chat.ID, resp.String())
 	if b.formating != "" {
 		logger.Debugf("setting formating: %s", b.formating)
 		msg.ParseMode = b.formating
 	}
+
 	_, err = b.api.Send(msg)
 	if err != nil {
 		logger.Errorf("Error on sending message %s:\n message text:\n %s", err.Error(), msg.Text)
@@ -184,9 +186,47 @@ func (b *Bot) checkMessageAuth(message *tgbotapi.Message) (bool, error) {
 }
 
 func (b *Bot) initMessageHandle(ctx context.Context, message *tgbotapi.Message, logger *log.Entry) chan *tgbotapi.Message {
+	proxyInput := make(chan *tgbotapi.Message)
 	input := make(chan *tgbotapi.Message)
+	go func() {
+		buffer := make([]*tgbotapi.Message, 1)
+		getChan := func() chan *tgbotapi.Message {
+			if len(buffer) == 0 {
+				return nil
+			}
+			return input
+		}
+		getVal := func() *tgbotapi.Message {
+			if len(buffer) == 0 {
+				return nil
+			}
+			return buffer[0]
+		}
+	loop:
+		for {
+			select {
+			case msg, ok := <-proxyInput:
+				{
+					if !ok {
+						break loop
+					}
+					logger.Debug("Got message to proxy")
+					buffer = append(buffer, msg)
+				}
+			case <-ctx.Done():
+				{
+					logger.Errorf("Failed to send message to task, canceled")
+				}
+			case getChan() <- getVal():
+				{
+					buffer = buffer[:len(buffer)-1]
+					logger.Debug("Send message from proxy")
+				}
+			}
+		}
+	}()
 	go b.newHandleMessage(ctx, message, input, logger)
-	return input
+	return proxyInput
 }
 
 func (b *Bot) handleMessage(ctx context.Context, message *tgbotapi.Message, logger *log.Entry) error {
@@ -200,17 +240,15 @@ func (b *Bot) handleMessage(ctx context.Context, message *tgbotapi.Message, logg
 		input := b.initMessageHandle(ctx, message, logger)
 		b.processing[key] = input
 	} else {
-		go func() {
-			select {
-			case taskChan <- message:
-				{
-				}
-			case <-ctx.Done():
-				{
-					logger.Errorf("Failed to send message to task, canceled")
-				}
+		select {
+		case taskChan <- message:
+			{
 			}
-		}()
+		case <-ctx.Done():
+			{
+				logger.Errorf("Failed to send message to task, canceled")
+			}
+		}
 	}
 	return nil
 }
