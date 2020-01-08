@@ -154,6 +154,11 @@ func normilizeMessageMode(raw string) (string, error) {
 }
 
 func (b *Bot) newHandleMessage(ctx context.Context, message *tgbotapi.Message, input chan *tgbotapi.Message, logger *log.Entry) {
+	defer func() {
+		// Todo: поправить обработку возможной ошибки
+		key, _ := getTaskKeyFromMessage(message)
+		delete(b.processing, key)
+	}()
 	var resp bytes.Buffer
 	err := b.executeMessage(ctx, &resp, message, input, logger)
 	if err != nil {
@@ -216,6 +221,7 @@ func (b *Bot) initMessageHandle(ctx context.Context, message *tgbotapi.Message, 
 			case <-ctx.Done():
 				{
 					logger.Errorf("Failed to send message to task, canceled")
+					break loop
 				}
 			case getChan() <- getVal():
 				{
