@@ -51,7 +51,7 @@ func prerunRoot(cmd *cobra.Command, args []string) error {
 func buildSystemContext(log *log.Logger) context.Context {
 	// Вешаем обработчики сигналов на контекст
 	ctx, cancel := context.WithCancel(context.Background())
-	sysSignals := make(chan os.Signal, 1)
+	sysSignals := make(chan os.Signal)
 
 	signal.Notify(sysSignals,
 		syscall.SIGHUP,

@@ -74,31 +74,55 @@ func (b *Bot) getHandName(messageArguments string) (string, error) {
 // TODO: подумать о каноничности такого подхода
 // для разных операций за формирование конечного сообщения отвечают различные уровни архитектуры
 func (b *Bot) getHandParams(handProcessor core.HandProcessor, messageArguments string) (map[string]interface{}, error) {
-	result := make(map[string]interface{})
+	params := make(map[string]interface{})
 	rows := strings.Split(messageArguments, "\n")
 	if len(rows) < 1 {
-		return result, fmt.Errorf("Failed to get hand name: empty arguments")
+		return params, fmt.Errorf("Failed to get hand name: empty arguments")
 	}
 	hands := rows[1:]
+	requiredParams, err := handProcessor.GetRequiredParams()
+	if err != nil {
+		return params, fmt.Errorf("Failed to get hand required parameters: %w", err)
+	}
+	getMissingParams := func() []core.ParamProcessor {
+		var missingParams []core.ParamProcessor
+		for _, param := range requiredParams {
+			info := param.GetInfo()
+			name := info.Name
+			if _, ok := params[name]; !ok {
+				missingParams = append(missingParams, param)
+			}
+		}
+		return missingParams
+	}
 	for _, row := range hands {
 		splited := strings.Fields(row)
 		//TODO: сделать более адекватный парсинг, с возможностью пробелов в значениях
 		if len(splited) != 2 {
-			return result, fmt.Errorf("Failed to parse param row %s, splited on %d args instead 2", row, len(splited))
+			return params, fmt.Errorf("Failed to parse param row %s, splited on %d args instead 2", row, len(splited))
 		}
 		paramName := splited[0]
 		paramValueStr := splited[1]
 		paramProcessor, err := handProcessor.GetParam(paramName)
 		if err != nil {
-			return result, err
+			return params, err
 		}
 		value, err := paramProcessor.ParseFromString(paramValueStr)
 		if err != nil {
-			return result, err
+			return params, err
 		}
-		result[paramName] = value
+		params[paramName] = value
 	}
-	return result, nil
+
+	missingParams := getMissingParams()
+	if len(missingParams) != 0 {
+		var missingParamsNames []string
+		for _, param := range missingParams {
+			missingParamsNames = append(missingParamsNames, param.GetInfo().Name)
+		}
+		return params, fmt.Errorf("missing required params: %s", strings.Join(missingParamsNames, ","))
+	}
+	return params, nil
 }
 
 func (b *Bot) processHand(ctx context.Context, writer io.Writer, messageArguments string, message *tgbotapi.Message, input chan *tgbotapi.Message, logger *log.Entry) error {
@@ -194,7 +218,7 @@ func (b *Bot) initMessageHandle(ctx context.Context, message *tgbotapi.Message, 
 	proxyInput := make(chan *tgbotapi.Message)
 	input := make(chan *tgbotapi.Message)
 	go func() {
-		buffer := make([]*tgbotapi.Message, 1)
+		buffer := make([]*tgbotapi.Message, 0)
 		getChan := func() chan *tgbotapi.Message {
 			if len(buffer) == 0 {
 				return nil

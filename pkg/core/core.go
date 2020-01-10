@@ -104,6 +104,7 @@ type HandProcessor interface {
 	Process(ctx context.Context, writer io.Writer, params map[string]interface{}, logger *log.Entry) error
 	GetInfo() *URLRecord
 	GetParam(string) (ParamProcessor, error)
+	GetRequiredParams() ([]ParamProcessor, error)
 }
 
 //ParamProcessor param processor handles param descriptions
@@ -111,6 +112,7 @@ type ParamProcessor interface {
 	ParseFromString(str string) (interface{}, error)
 	WriteHelp(writer io.Writer) error
 	GetInfo() ParamInfo
+	IsRequired() bool
 }
 
 //NewURLProcessor creates new url processor, using data source and http client

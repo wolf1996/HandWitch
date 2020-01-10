@@ -162,6 +162,21 @@ func (processor *HandProcessorImp) GetParam(paramName string) (ParamProcessor, e
 	return &param, nil
 }
 
+//GetRequiredParams get all required parameters
+func (processor *HandProcessorImp) GetRequiredParams() ([]ParamProcessor, error) {
+	result := make([]ParamProcessor, 0)
+	for paramName, _ := range processor.Parameters {
+		param, err := processor.GetParam(paramName)
+		if err != nil {
+			return result, err
+		}
+		if param.IsRequired() {
+			result = append(result, param)
+		}
+	}
+	return result, nil
+}
+
 //ParamProcessorImp implemet
 type ParamProcessorImp struct {
 	ParamInfo
@@ -196,6 +211,11 @@ func (p *ParamProcessorImp) WriteHelp(writer io.Writer) error {
 //GetInfo get raw info
 func (p *ParamProcessorImp) GetInfo() ParamInfo {
 	return p.ParamInfo
+}
+
+//IsRequired check if parameter is required
+func (p *ParamProcessorImp) IsRequired() bool {
+	return p.Destination == URLPlaced
 }
 
 //ParseFromString get param value from string
