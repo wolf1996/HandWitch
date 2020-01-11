@@ -165,7 +165,7 @@ func (processor *HandProcessorImp) GetParam(paramName string) (ParamProcessor, e
 //GetRequiredParams get all required parameters
 func (processor *HandProcessorImp) GetRequiredParams() ([]ParamProcessor, error) {
 	result := make([]ParamProcessor, 0)
-	for paramName, _ := range processor.Parameters {
+	for paramName := range processor.Parameters {
 		param, err := processor.GetParam(paramName)
 		if err != nil {
 			return result, err

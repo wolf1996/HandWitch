@@ -323,7 +323,10 @@ func (b *Bot) Listen(ctx context.Context, logger *log.Logger) error {
 	for {
 		select {
 		case up := <-updates:
-			b.processUpdate(ctx, up, log.NewEntry(logger))
+			err = b.processUpdate(ctx, up, log.NewEntry(logger))
+			if err != nil {
+				logger.Errorf("Failed to process update %s", err.Error())
+			}
 		case <-ctx.Done():
 			return ctx.Err()
 		}
