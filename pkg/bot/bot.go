@@ -73,35 +73,89 @@ func (b *Bot) getHandName(messageArguments string) (string, error) {
 	return strings.TrimSpace(handName), nil
 }
 
-func (b *Bot) parseParamsFromMessage(handProcessor core.HandProcessor, messageText string) (map[string]interface{}, error) {
-	params := make(map[string]interface{})
-	rows := strings.Split(messageText, "\n")
-	hands := rows[1:]
-	for _, row := range hands {
-		splited := strings.Fields(row)
-		//TODO: сделать более адекватный парсинг, с возможностью пробелов в значениях
-		if len(splited) != 2 {
-			return params, fmt.Errorf("Failed to parse param row %s, splited on %d args instead 2", row, len(splited))
-		}
-		paramName := splited[0]
-		paramValueStr := splited[1]
-		paramProcessor, err := handProcessor.GetParam(paramName)
-		if err != nil {
-			return params, err
-		}
-		value, err := paramProcessor.ParseFromString(paramValueStr)
-		if err != nil {
-			return params, err
-		}
-		params[paramName] = value
+func (b *Bot) parseParamRow(handProcessor core.HandProcessor, messageRow string) (string, interface{}, error) {
+	splited := strings.Fields(messageRow)
+	//TODO: сделать более адекватный парсинг, с возможностью пробелов в значениях
+	if len(splited) != 2 {
+		return "", nil, fmt.Errorf("Failed to parse param row %s, splited on %d args instead 2", messageRow, len(splited))
 	}
-	return params, nil
+	paramName := splited[0]
+	paramValueStr := splited[1]
+	paramProcessor, err := handProcessor.GetParam(paramName)
+	if err != nil {
+		return "", nil, err
+	}
+	value, err := paramProcessor.ParseFromString(paramValueStr)
+	if err != nil {
+		return "", nil, err
+	}
+	return paramName, value, nil
+}
+
+func (b *Bot) inqueryParams(ctx context.Context, handProcessor core.HandProcessor, params map[string]interface{}, missingParams map[string]core.ParamProcessor, message *tgbotapi.Message, input messages) error {
+	for len(missingParams) != 0 {
+		var paramsNames []string
+		for _, param := range missingParams {
+			paramsNames = append(paramsNames, param.GetInfo().Name)
+		}
+		missingParamsList := strings.Join(paramsNames, "\", \"")
+		msg := tgbotapi.NewMessage(message.Chat.ID, fmt.Sprintf("Missed params: \"%s\"", missingParamsList))
+		_, err := b.api.Send(msg)
+		if err != nil {
+			//TODO проверить обработку ошибок и ретраи
+			return fmt.Errorf("failed request missing parameters from user %w", err)
+		}
+		select {
+		case inp := <-input:
+			{
+			PARSE_PARAMS:
+				for _, row := range strings.Split(inp.Text, "\n") {
+					name, val, err := b.parseParamRow(handProcessor, row)
+					if err != nil {
+						msg := tgbotapi.NewMessage(message.Chat.ID, fmt.Sprintf("Failed to parse param: \"%s\" %s", name, err.Error()))
+						_, err = b.api.Send(msg)
+						if err != nil {
+							return fmt.Errorf("Failed to send error message to user %w", err)
+						}
+						continue PARSE_PARAMS
+					}
+					delete(missingParams, name)
+					params[name] = val
+				}
+				if err != nil {
+					msg := tgbotapi.NewMessage(message.Chat.ID, fmt.Sprintf("Failed to parse param: \"%s\"", err.Error()))
+					_, err := b.api.Send(msg)
+					if err != nil {
+						return fmt.Errorf("Failed to send error message to user %w", err)
+					}
+				}
+			}
+		case <-ctx.Done():
+			{
+				return fmt.Errorf("Context canceled %w", err)
+			}
+		}
+	}
+	return nil
 }
 
 // TODO: подумать о каноничности такого подхода
 // для разных операций за формирование конечного сообщения отвечают различные уровни архитектуры
-func (b *Bot) getHandParams(handProcessor core.HandProcessor, messageArguments string) (map[string]interface{}, error) {
-	params, err := b.parseParamsFromMessage(handProcessor, messageArguments)
+func (b *Bot) getHandParams(ctx context.Context, handProcessor core.HandProcessor, messageArguments string, message *tgbotapi.Message, input messages) (map[string]interface{}, error) {
+	params := make(map[string]interface{})
+
+	// TODO: переделать это на reader и построчное чтение?
+	for _, row := range strings.Split(message.Text, "\n")[1:] {
+		name, val, err := b.parseParamRow(handProcessor, row)
+		if err != nil {
+			msg := tgbotapi.NewMessage(message.Chat.ID, fmt.Sprintf("Failed to parse param: \"%s\" %s", name, err.Error()))
+			_, err = b.api.Send(msg)
+			if err != nil {
+				return params, fmt.Errorf("Failed to send error message to user %w", err)
+			}
+		}
+		params[name] = val
+	}
 
 	requiredParams, err := handProcessor.GetRequiredParams()
 	if err != nil {
@@ -110,26 +164,22 @@ func (b *Bot) getHandParams(handProcessor core.HandProcessor, messageArguments s
 	if err != nil {
 		return params, err
 	}
-	getMissingParams := func() []core.ParamProcessor {
-		var missingParams []core.ParamProcessor
+	getMissingParams := func() map[string]core.ParamProcessor {
+		missingParams := make(map[string]core.ParamProcessor)
 		for _, param := range requiredParams {
-			info := param.GetInfo()
-			name := info.Name
-			if _, ok := params[name]; !ok {
-				missingParams = append(missingParams, param)
+			if _, ok := params[param.GetInfo().Name]; !ok {
+				missingParams[param.GetInfo().Name] = param
 			}
 		}
 		return missingParams
 	}
 
 	missingParams := getMissingParams()
-	if len(missingParams) != 0 {
-		var missingParamsNames []string
-		for _, param := range missingParams {
-			missingParamsNames = append(missingParamsNames, param.GetInfo().Name)
-		}
-		return params, fmt.Errorf("missing required params: %s", strings.Join(missingParamsNames, ","))
+	err = b.inqueryParams(ctx, handProcessor, params, missingParams, message, input)
+	if err != nil {
+		return params, fmt.Errorf("Failed to inquery params %w", err)
 	}
+
 	return params, nil
 }
 
@@ -145,10 +195,11 @@ func (b *Bot) processHand(ctx context.Context, writer io.Writer, messageArgument
 	if err != nil {
 		return err
 	}
-	params, err := b.getHandParams(handProcessor, messageArguments)
+	params, err := b.getHandParams(ctx, handProcessor, messageArguments, message, input)
 	if err != nil {
 		return err
 	}
+	logger.Debugf("Got parameters %v", params)
 	return handProcessor.Process(ctx, writer, params, logger)
 }
 
@@ -295,11 +346,6 @@ func (b *Bot) handleMessage(ctx context.Context, message *tgbotapi.Message, logg
 func (b *Bot) processUpdate(ctx context.Context, update tgbotapi.Update, logger *log.Entry) error {
 	if update.Message == nil { // ignore any non-Message Updates
 		logger.Debugf("No message in update skipping")
-		return nil
-	}
-	if !update.Message.IsCommand() {
-		// ignore non-Command  Updates
-		logger.Debugf("No command in message update skipping")
 		return nil
 	}
 	allowed, err := b.checkMessageAuth(update.Message)
