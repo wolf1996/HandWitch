@@ -21,7 +21,9 @@ type (
 		UserId string
 	}
 
-	inProgresTask = map[taskKey]chan *tgbotapi.Message
+	messages = chan *tgbotapi.Message
+
+	inProgresTask = map[taskKey]messages
 )
 
 func getTaskKeyFromMessage(message *tgbotapi.Message) (taskKey, error) {
@@ -71,30 +73,10 @@ func (b *Bot) getHandName(messageArguments string) (string, error) {
 	return strings.TrimSpace(handName), nil
 }
 
-// TODO: подумать о каноничности такого подхода
-// для разных операций за формирование конечного сообщения отвечают различные уровни архитектуры
-func (b *Bot) getHandParams(handProcessor core.HandProcessor, messageArguments string) (map[string]interface{}, error) {
+func (b *Bot) parseParamsFromMessage(handProcessor core.HandProcessor, messageText string) (map[string]interface{}, error) {
 	params := make(map[string]interface{})
-	rows := strings.Split(messageArguments, "\n")
-	if len(rows) < 1 {
-		return params, fmt.Errorf("Failed to get hand name: empty arguments")
-	}
+	rows := strings.Split(messageText, "\n")
 	hands := rows[1:]
-	requiredParams, err := handProcessor.GetRequiredParams()
-	if err != nil {
-		return params, fmt.Errorf("Failed to get hand required parameters: %w", err)
-	}
-	getMissingParams := func() []core.ParamProcessor {
-		var missingParams []core.ParamProcessor
-		for _, param := range requiredParams {
-			info := param.GetInfo()
-			name := info.Name
-			if _, ok := params[name]; !ok {
-				missingParams = append(missingParams, param)
-			}
-		}
-		return missingParams
-	}
 	for _, row := range hands {
 		splited := strings.Fields(row)
 		//TODO: сделать более адекватный парсинг, с возможностью пробелов в значениях
@@ -113,6 +95,32 @@ func (b *Bot) getHandParams(handProcessor core.HandProcessor, messageArguments s
 		}
 		params[paramName] = value
 	}
+	return params, nil
+}
+
+// TODO: подумать о каноничности такого подхода
+// для разных операций за формирование конечного сообщения отвечают различные уровни архитектуры
+func (b *Bot) getHandParams(handProcessor core.HandProcessor, messageArguments string) (map[string]interface{}, error) {
+	params, err := b.parseParamsFromMessage(handProcessor, messageArguments)
+
+	requiredParams, err := handProcessor.GetRequiredParams()
+	if err != nil {
+		return params, fmt.Errorf("Failed to get hand required parameters: %w", err)
+	}
+	if err != nil {
+		return params, err
+	}
+	getMissingParams := func() []core.ParamProcessor {
+		var missingParams []core.ParamProcessor
+		for _, param := range requiredParams {
+			info := param.GetInfo()
+			name := info.Name
+			if _, ok := params[name]; !ok {
+				missingParams = append(missingParams, param)
+			}
+		}
+		return missingParams
+	}
 
 	missingParams := getMissingParams()
 	if len(missingParams) != 0 {
@@ -125,7 +133,7 @@ func (b *Bot) getHandParams(handProcessor core.HandProcessor, messageArguments s
 	return params, nil
 }
 
-func (b *Bot) processHand(ctx context.Context, writer io.Writer, messageArguments string, message *tgbotapi.Message, input chan *tgbotapi.Message, logger *log.Entry) error {
+func (b *Bot) processHand(ctx context.Context, writer io.Writer, messageArguments string, message *tgbotapi.Message, input messages, logger *log.Entry) error {
 	if messageArguments == "" {
 		return errors.New("Empty arguments")
 	}
@@ -155,7 +163,7 @@ func (b *Bot) helpHand(ctx context.Context, writer io.Writer, messageArguments s
 	return handProcessor.WriteHelp(writer)
 }
 
-func (b *Bot) executeMessage(ctx context.Context, writer io.Writer, message *tgbotapi.Message, input chan *tgbotapi.Message, logger *log.Entry) error {
+func (b *Bot) executeMessage(ctx context.Context, writer io.Writer, message *tgbotapi.Message, input messages, logger *log.Entry) error {
 	switch message.Command() {
 	case "process":
 		logger.Debug("found \"process\" command")
@@ -177,7 +185,7 @@ func normilizeMessageMode(raw string) (string, error) {
 	return "", fmt.Errorf("Invalid message mode %s", raw)
 }
 
-func (b *Bot) newHandleMessage(ctx context.Context, message *tgbotapi.Message, input chan *tgbotapi.Message, logger *log.Entry) {
+func (b *Bot) newHandleMessage(ctx context.Context, message *tgbotapi.Message, input messages, logger *log.Entry) {
 	defer func() {
 		// Todo: поправить обработку возможной ошибки
 		key, _ := getTaskKeyFromMessage(message)
@@ -214,12 +222,12 @@ func (b *Bot) checkMessageAuth(message *tgbotapi.Message) (bool, error) {
 	return role == User, nil
 }
 
-func (b *Bot) initMessageHandle(ctx context.Context, message *tgbotapi.Message, logger *log.Entry) chan *tgbotapi.Message {
-	proxyInput := make(chan *tgbotapi.Message)
-	input := make(chan *tgbotapi.Message)
+func (b *Bot) initMessageHandle(ctx context.Context, message *tgbotapi.Message, logger *log.Entry) messages {
+	proxyInput := make(messages)
+	input := make(messages)
 	go func() {
 		buffer := make([]*tgbotapi.Message, 0)
-		getChan := func() chan *tgbotapi.Message {
+		getChan := func() messages {
 			if len(buffer) == 0 {
 				return nil
 			}
