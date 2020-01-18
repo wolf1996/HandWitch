@@ -82,7 +82,8 @@ func (b *Bot) processHand(ctx context.Context, writer io.Writer, messageArgument
 	if err != nil {
 		return err
 	}
-	processCommand := NewProcessCommand(ctx, input, b.api, handProcessor, message, logger)
+	tg := newWrapper(input, b.api, message, b.formating, logger)
+	processCommand := NewProcessCommand(ctx, handProcessor, tg, logger)
 	processCommand.Process(messageArguments, writer)
 	return nil
 }

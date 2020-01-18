@@ -40,6 +40,7 @@ func newWrapper(input messagesChan, api *tgbotapi.BotAPI, msg *tgbotapi.Message,
 }
 
 func (wp *wrapper) Get(ctx context.Context) (message, error) {
+	wp.logger.Debug("Waiting for message")
 	select {
 	case inp := <-wp.input:
 		{
@@ -55,6 +56,7 @@ func (wp *wrapper) Get(ctx context.Context) (message, error) {
 
 func (wp *wrapper) Send(ctx context.Context, msgTxt string) error {
 	msg := tgbotapi.NewMessage(wp.chat.ID, msgTxt)
+	log.Debug("Sending message %s", msgTxt)
 	if wp.formating != "" {
 		wp.logger.Debugf("setting formating: %s", wp.formating)
 		msg.ParseMode = wp.formating
@@ -65,7 +67,7 @@ func (wp *wrapper) Send(ctx context.Context, msgTxt string) error {
 	_, err := wp.api.Send(msg)
 	if err != nil {
 		wp.logger.Errorf("Error on sending message %s:\n message text:\n %s", err.Error(), msg.Text)
-
+		return err
 	}
 	return nil
 }

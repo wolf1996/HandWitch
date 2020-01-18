@@ -14,20 +14,16 @@ import (
 
 type processCommand struct {
 	ctx      context.Context
-	input    messagesChan
-	api      *tgbotapi.BotAPI
+	tg       telegram
 	handProc core.HandProcessor
-	message  *tgbotapi.Message
 	log      *log.Entry
 }
 
-func NewProcessCommand(ctx context.Context, input messagesChan, api *tgbotapi.BotAPI, handProc core.HandProcessor, message *tgbotapi.Message, log *log.Entry) processCommand {
+func NewProcessCommand(ctx context.Context, handProc core.HandProcessor, tg telegram, log *log.Entry) processCommand {
 	return processCommand{
 		ctx:      ctx,
-		input:    input,
-		api:      api,
+		tg:       tg,
 		handProc: handProc,
-		message:  message,
 		log:      log,
 	}
 }
@@ -59,51 +55,44 @@ func parseParamRow(handProcessor core.HandProcessor, messageRow string) (string,
 	return paramName, value, nil
 }
 
-func (b *processCommand) handleSingleParam(ctx context.Context, paramProcessor core.ParamProcessor, params map[string]interface{}, missingParams map[string]core.ParamProcessor, message *tgbotapi.Message, input messagesChan) error {
+func (b *processCommand) handleSingleParam(ctx context.Context, paramProcessor core.ParamProcessor, params map[string]interface{}, missingParams map[string]core.ParamProcessor) error {
 	// TODO: сделать более подробное описание в сообщении, возможно - хэлп
-	msg := tgbotapi.NewMessage(message.Chat.ID, fmt.Sprintf("Input value for param: \"%s\"", paramProcessor.GetInfo().Name))
-	_, err := b.api.Send(msg)
+	err := b.tg.Send(ctx, fmt.Sprintf("Input value for param: \"%s\"", paramProcessor.GetInfo().Name))
 	if err != nil {
 		//TODO проверить обработку ошибок и ретраи
 		return fmt.Errorf("failed request missing parameters from user %w", err)
 	}
 LOOP:
 	for {
-		select {
-		case inp := <-input:
-			value, err := paramProcessor.ParseFromString(inp.Text)
-			if err != nil {
-				msg := tgbotapi.NewMessage(inp.Chat.ID, fmt.Sprintf("Failed to parse param:  %s", err.Error()))
-				_, err = b.api.Send(msg)
-				if err != nil {
-					return fmt.Errorf("Failed to send error message to user %w", err)
-				}
-				continue LOOP
-			}
-			delete(missingParams, paramProcessor.GetInfo().Name)
-			params[paramProcessor.GetInfo().Name] = value
-			//TODO: Переделать, обязательно! выглядит и читается ужасно
-			break LOOP
-		case <-ctx.Done():
-			{
-				return fmt.Errorf("Context canceled %w", err)
-			}
+		inp, err := b.tg.Get(ctx)
+		if err != nil {
+			continue LOOP
 		}
+		value, err := paramProcessor.ParseFromString(inp)
+		if err != nil {
+			err = b.tg.Send(ctx, fmt.Sprintf("Failed to parse param:  %s", err.Error()))
+			if err != nil {
+				return fmt.Errorf("Failed to send error message to user %w", err)
+			}
+			continue LOOP
+		}
+		delete(missingParams, paramProcessor.GetInfo().Name)
+		params[paramProcessor.GetInfo().Name] = value
+		break
 	}
 	return nil
 }
 
 // TODO: подумать о каноничности такого подхода
 // для разных операций за формирование конечного сообщения отвечают различные уровни архитектуры
-func (b *processCommand) getHandParams(ctx context.Context, handProcessor core.HandProcessor, messageArguments string, message *tgbotapi.Message, input messagesChan) (map[string]interface{}, error) {
+func (b *processCommand) getHandParams(ctx context.Context, handProcessor core.HandProcessor, messageArguments string) (map[string]interface{}, error) {
 	params := make(map[string]interface{})
 
 	// TODO: переделать это на reader и построчное чтение?
-	for _, row := range strings.Split(message.Text, "\n")[1:] {
+	for _, row := range strings.Split(messageArguments, "\n")[1:] {
 		name, val, err := parseParamRow(handProcessor, row)
 		if err != nil {
-			msg := tgbotapi.NewMessage(message.Chat.ID, fmt.Sprintf("Failed to parse param: \"%s\" %s", name, err.Error()))
-			_, err = b.api.Send(msg)
+			err = b.tg.Send(ctx, fmt.Sprintf("Failed to parse param: \"%s\" %s", name, err.Error()))
 			if err != nil {
 				return params, fmt.Errorf("Failed to send error message to user %w", err)
 			}
@@ -129,7 +118,7 @@ func (b *processCommand) getHandParams(ctx context.Context, handProcessor core.H
 	}
 
 	missingParams := getMissingParams()
-	err = b.inqueryParams(ctx, handProcessor, params, missingParams, message, input)
+	err = b.inqueryParams(ctx, handProcessor, params, missingParams)
 	if err != nil {
 		return params, fmt.Errorf("Failed to inquery params %w", err)
 	}
@@ -137,54 +126,36 @@ func (b *processCommand) getHandParams(ctx context.Context, handProcessor core.H
 	return params, nil
 }
 
-func (b *processCommand) inqueryParams(ctx context.Context, handProcessor core.HandProcessor, params map[string]interface{}, missingParams map[string]core.ParamProcessor, message *tgbotapi.Message, input messagesChan) error {
+func (b *processCommand) inqueryParams(ctx context.Context, handProcessor core.HandProcessor, params map[string]interface{}, missingParams map[string]core.ParamProcessor) error {
 	for len(missingParams) != 0 {
-		var paramsNames []string
-		for _, param := range missingParams {
-			paramsNames = append(paramsNames, param.GetInfo().Name)
-		}
-		missingParamsList := strings.Join(paramsNames, "\", \"")
-		msg := tgbotapi.NewMessage(message.Chat.ID, fmt.Sprintf("Missed params: \"%s\"", missingParamsList))
-		keyboard := buildKeyboard(missingParams)
-		msg.ReplyMarkup = keyboard
-		_, err := b.api.Send(msg)
+		err := b.tg.RequestParams(missingParams)
 		if err != nil {
 			//TODO проверить обработку ошибок и ретраи
 			return fmt.Errorf("failed request missing parameters from user %w", err)
 		}
-		select {
-		case inp := <-input:
-			{
-				// TODO Переделать при рефакторинге; добавить обработку дополнительных и некорректных вариантов
-				if handle, ok := missingParams[inp.Text]; ok {
-					err := b.handleSingleParam(ctx, handle, params, missingParams, message, input)
-					if err != nil {
-						return err
-					}
-				} else {
-					err := b.parseAll(inp, handProcessor, params, missingParams)
-					if err != nil {
-						return err
-					}
-				}
+		txt, err := b.tg.Get(ctx)
+		if handle, ok := missingParams[txt]; ok {
+			err := b.handleSingleParam(ctx, handle, params, missingParams)
+			if err != nil {
+				return err
 			}
-		case <-ctx.Done():
-			{
-				return fmt.Errorf("Context canceled %w", err)
+		} else {
+			err := b.parseAll(txt, handProcessor, params, missingParams)
+			if err != nil {
+				return err
 			}
 		}
 	}
 	return nil
 }
 
-func (b *processCommand) parseAll(input *tgbotapi.Message, handProcessor core.HandProcessor, params map[string]interface{}, missingParams map[string]core.ParamProcessor) error {
+func (b *processCommand) parseAll(input string, handProcessor core.HandProcessor, params map[string]interface{}, missingParams map[string]core.ParamProcessor) error {
 	var err error
 PARSE_PARAMS:
-	for _, row := range strings.Split(input.Text, "\n") {
+	for _, row := range strings.Split(input, "\n") {
 		name, val, err := parseParamRow(handProcessor, row)
 		if err != nil {
-			msg := tgbotapi.NewMessage(input.Chat.ID, fmt.Sprintf("Failed to parse param: \"%s\" %s", name, err.Error()))
-			_, err = b.api.Send(msg)
+			b.tg.Send(b.ctx, fmt.Sprintf("Failed to parse param: \"%s\" %s", name, err.Error()))
 			if err != nil {
 				return fmt.Errorf("Failed to send error message to user %w", err)
 			}
@@ -194,8 +165,7 @@ PARSE_PARAMS:
 		params[name] = val
 	}
 	if err != nil {
-		msg := tgbotapi.NewMessage(input.Chat.ID, fmt.Sprintf("Failed to parse param: \"%s\"", err.Error()))
-		_, err := b.api.Send(msg)
+		err = b.tg.Send(b.ctx, fmt.Sprintf("Failed to parse param: \"%s\"", err.Error()))
 		if err != nil {
 			return fmt.Errorf("Failed to send error message to user %w", err)
 		}
@@ -207,7 +177,7 @@ func (proc *processCommand) Process(messageArguments string, writer io.Writer) e
 	if messageArguments == "" {
 		return errors.New("Empty arguments")
 	}
-	params, err := proc.getHandParams(proc.ctx, proc.handProc, messageArguments, proc.message, proc.input)
+	params, err := proc.getHandParams(proc.ctx, proc.handProc, messageArguments)
 	if err != nil {
 		return err
 	}
