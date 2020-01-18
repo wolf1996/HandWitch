@@ -46,9 +46,9 @@ func (wp *wrapper) Get(ctx context.Context) (message, error) {
 		{
 			return inp.Text, nil
 		}
-	case err := <-ctx.Done():
+	case <-ctx.Done():
 		{
-			return "", fmt.Errorf("Context canceled %w", err)
+			return "", fmt.Errorf("Context canceled %w", ctx.Err())
 		}
 	}
 
