@@ -20,10 +20,7 @@ type (
 		ChatId int64
 		UserId string
 	}
-
-	messages = chan *tgbotapi.Message
-
-	inProgresTask = map[taskKey]messages
+	inProgresTask = map[taskKey]messagesChan
 )
 
 func getTaskKeyFromMessage(message *tgbotapi.Message) (taskKey, error) {
@@ -73,7 +70,7 @@ func (b *Bot) getHandName(messageArguments string) (string, error) {
 	return strings.TrimSpace(handName), nil
 }
 
-func (b *Bot) processHand(ctx context.Context, writer io.Writer, messageArguments string, message *tgbotapi.Message, input messages, logger *log.Entry) error {
+func (b *Bot) processHand(ctx context.Context, writer io.Writer, messageArguments string, message *tgbotapi.Message, input messagesChan, logger *log.Entry) error {
 	if messageArguments == "" {
 		return errors.New("Empty arguments")
 	}
@@ -101,7 +98,7 @@ func (b *Bot) helpHand(ctx context.Context, writer io.Writer, messageArguments s
 	return handProcessor.WriteHelp(writer)
 }
 
-func (b *Bot) executeMessage(ctx context.Context, writer io.Writer, message *tgbotapi.Message, input messages, logger *log.Entry) error {
+func (b *Bot) executeMessage(ctx context.Context, writer io.Writer, message *tgbotapi.Message, input messagesChan, logger *log.Entry) error {
 	switch message.Command() {
 	case "process":
 		logger.Debug("found \"process\" command")
@@ -123,7 +120,7 @@ func normilizeMessageMode(raw string) (string, error) {
 	return "", fmt.Errorf("Invalid message mode %s", raw)
 }
 
-func (b *Bot) newHandleMessage(ctx context.Context, message *tgbotapi.Message, input messages, logger *log.Entry) {
+func (b *Bot) newHandleMessage(ctx context.Context, message *tgbotapi.Message, input messagesChan, logger *log.Entry) {
 	defer func() {
 		// Todo: поправить обработку возможной ошибки
 		key, _ := getTaskKeyFromMessage(message)
@@ -162,12 +159,12 @@ func (b *Bot) checkMessageAuth(message *tgbotapi.Message) (bool, error) {
 	return role == User, nil
 }
 
-func (b *Bot) initMessageHandle(ctx context.Context, message *tgbotapi.Message, logger *log.Entry) messages {
-	proxyInput := make(messages)
-	input := make(messages)
+func (b *Bot) initMessageHandle(ctx context.Context, message *tgbotapi.Message, logger *log.Entry) messagesChan {
+	proxyInput := make(messagesChan)
+	input := make(messagesChan)
 	go func() {
 		buffer := make([]*tgbotapi.Message, 0)
-		getChan := func() messages {
+		getChan := func() messagesChan {
 			if len(buffer) == 0 {
 				return nil
 			}

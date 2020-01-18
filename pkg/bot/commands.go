@@ -14,14 +14,14 @@ import (
 
 type processCommand struct {
 	ctx      context.Context
-	input    messages
+	input    messagesChan
 	api      *tgbotapi.BotAPI
 	handProc core.HandProcessor
 	message  *tgbotapi.Message
 	log      *log.Entry
 }
 
-func NewProcessCommand(ctx context.Context, input messages, api *tgbotapi.BotAPI, handProc core.HandProcessor, message *tgbotapi.Message, log *log.Entry) processCommand {
+func NewProcessCommand(ctx context.Context, input messagesChan, api *tgbotapi.BotAPI, handProc core.HandProcessor, message *tgbotapi.Message, log *log.Entry) processCommand {
 	return processCommand{
 		ctx:      ctx,
 		input:    input,
@@ -59,7 +59,7 @@ func parseParamRow(handProcessor core.HandProcessor, messageRow string) (string,
 	return paramName, value, nil
 }
 
-func (b *processCommand) handleSingleParam(ctx context.Context, paramProcessor core.ParamProcessor, params map[string]interface{}, missingParams map[string]core.ParamProcessor, message *tgbotapi.Message, input messages) error {
+func (b *processCommand) handleSingleParam(ctx context.Context, paramProcessor core.ParamProcessor, params map[string]interface{}, missingParams map[string]core.ParamProcessor, message *tgbotapi.Message, input messagesChan) error {
 	// TODO: сделать более подробное описание в сообщении, возможно - хэлп
 	msg := tgbotapi.NewMessage(message.Chat.ID, fmt.Sprintf("Input value for param: \"%s\"", paramProcessor.GetInfo().Name))
 	_, err := b.api.Send(msg)
@@ -95,7 +95,7 @@ LOOP:
 
 // TODO: подумать о каноничности такого подхода
 // для разных операций за формирование конечного сообщения отвечают различные уровни архитектуры
-func (b *processCommand) getHandParams(ctx context.Context, handProcessor core.HandProcessor, messageArguments string, message *tgbotapi.Message, input messages) (map[string]interface{}, error) {
+func (b *processCommand) getHandParams(ctx context.Context, handProcessor core.HandProcessor, messageArguments string, message *tgbotapi.Message, input messagesChan) (map[string]interface{}, error) {
 	params := make(map[string]interface{})
 
 	// TODO: переделать это на reader и построчное чтение?
@@ -137,7 +137,7 @@ func (b *processCommand) getHandParams(ctx context.Context, handProcessor core.H
 	return params, nil
 }
 
-func (b *processCommand) inqueryParams(ctx context.Context, handProcessor core.HandProcessor, params map[string]interface{}, missingParams map[string]core.ParamProcessor, message *tgbotapi.Message, input messages) error {
+func (b *processCommand) inqueryParams(ctx context.Context, handProcessor core.HandProcessor, params map[string]interface{}, missingParams map[string]core.ParamProcessor, message *tgbotapi.Message, input messagesChan) error {
 	for len(missingParams) != 0 {
 		var paramsNames []string
 		for _, param := range missingParams {
