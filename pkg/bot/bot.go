@@ -88,15 +88,22 @@ func (b *Bot) processHand(ctx context.Context, writer io.Writer, messageArgument
 	return nil
 }
 
-func (b *Bot) helpHand(ctx context.Context, writer io.Writer, messageArguments string, logger *log.Entry) error {
+func (b *Bot) helpHand(ctx context.Context, writer io.Writer, messageArguments string, message *tgbotapi.Message, input messagesChan, logger *log.Entry) error {
 	if messageArguments == "" {
-		return fmt.Errorf("Empty arguments")
+		return errors.New("Empty arguments")
 	}
-	handProcessor, err := b.app.GetHand(messageArguments)
+	handName, err := b.getHandName(messageArguments)
 	if err != nil {
 		return err
 	}
-	return handProcessor.WriteHelp(writer)
+	handProcessor, err := b.app.GetHand(handName)
+	if err != nil {
+		return err
+	}
+	tg := newWrapper(input, b.api, message, b.formating, logger)
+	processCommand := NewHelpCommand(ctx, handProcessor, tg, logger)
+	processCommand.Process(messageArguments, writer)
+	return nil
 }
 
 func (b *Bot) executeMessage(ctx context.Context, writer io.Writer, message *tgbotapi.Message, input messagesChan, logger *log.Entry) error {
@@ -106,7 +113,7 @@ func (b *Bot) executeMessage(ctx context.Context, writer io.Writer, message *tgb
 		return b.processHand(ctx, writer, message.CommandArguments(), message, input, logger)
 	case "help":
 		logger.Debug("found \"help\" command")
-		return b.helpHand(ctx, writer, message.CommandArguments(), logger)
+		return b.helpHand(ctx, writer, message.CommandArguments(), message, input, logger)
 	}
 	return fmt.Errorf("Wrong comand %s", message.Command())
 }
