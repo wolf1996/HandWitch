@@ -44,8 +44,6 @@ type Bot struct {
 	cmds       map[string]comandFabric
 }
 
-//TODO: проверить каноничность
-
 // NewBot создаёт новый инстанс бота
 func NewBot(client *http.Client, token string, app core.URLProcessor, auth Authorisation, formating string) (*Bot, error) {
 	bot, err := tgbotapi.NewBotAPIWithClient(token, client)

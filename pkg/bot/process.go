@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"strings"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 	log "github.com/sirupsen/logrus"
 	"github.com/wolf1996/HandWitch/pkg/core"
 )
@@ -25,14 +24,6 @@ func NewProcessCommand(ctx context.Context, handProc core.HandProcessor, tg tele
 		handProc: handProc,
 		log:      log,
 	}
-}
-
-func buildKeyboard(missingParams map[string]core.ParamProcessor) tgbotapi.ReplyKeyboardMarkup {
-	buttons := make([]tgbotapi.KeyboardButton, 0)
-	for paramName := range missingParams {
-		buttons = append(buttons, tgbotapi.NewKeyboardButton(paramName))
-	}
-	return tgbotapi.NewReplyKeyboard(buttons)
 }
 
 func parseParamRow(handProcessor core.HandProcessor, messageRow string) (string, interface{}, error) {
