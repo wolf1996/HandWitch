@@ -72,6 +72,14 @@ func (wp *wrapper) Send(ctx context.Context, msgTxt string) error {
 	return nil
 }
 
+func buildKeyboard(missingParams map[string]core.ParamProcessor) tgbotapi.ReplyKeyboardMarkup {
+	buttons := make([]tgbotapi.KeyboardButton, 0)
+	for paramName := range missingParams {
+		buttons = append(buttons, tgbotapi.NewKeyboardButton(paramName))
+	}
+	return tgbotapi.NewReplyKeyboard(buttons)
+}
+
 func (wp *wrapper) RequestParams(missingParams map[string]core.ParamProcessor) error {
 	var paramsNames []string
 	for _, param := range missingParams {
