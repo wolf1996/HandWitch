@@ -91,8 +91,7 @@ func (b *Bot) processCmd(ctx context.Context, messageArguments string, message *
 	}
 	tg := newWrapper(input, b.api, message, b.formating, logger)
 	command := fabric(ctx, handProcessor, tg, logger)
-	command.Process(messageArguments)
-	return nil
+	return command.Process(messageArguments)
 }
 
 func (b *Bot) executeMessage(ctx context.Context, message *tgbotapi.Message, input messagesChan, logger *log.Entry) error {
@@ -115,7 +114,6 @@ func normilizeMessageMode(raw string) (string, error) {
 
 func (b *Bot) newHandleMessage(ctx context.Context, message *tgbotapi.Message, input messagesChan, logger *log.Entry) {
 	defer func() {
-		// Todo: поправить обработку возможной ошибки
 		key, _ := getTaskKeyFromMessage(message)
 		delete(b.processing, key)
 	}()

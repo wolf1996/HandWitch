@@ -56,7 +56,7 @@ func (wp *wrapper) Get(ctx context.Context) (message, error) {
 
 func (wp *wrapper) Send(ctx context.Context, msgTxt string) error {
 	msg := tgbotapi.NewMessage(wp.chat.ID, msgTxt)
-	log.Debug("Sending message %s", msgTxt)
+	log.Debugf("Sending message %s", msgTxt)
 	if wp.formating != "" {
 		wp.logger.Debugf("setting formating: %s", wp.formating)
 		msg.ParseMode = wp.formating

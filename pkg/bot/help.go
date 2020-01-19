@@ -30,6 +30,5 @@ func (proc *helpCommand) Process(messageArguments string) error {
 	if err != nil {
 		return err
 	}
-	proc.tg.Send(proc.ctx, respWriter.String())
-	return nil
+	return proc.tg.Send(proc.ctx, respWriter.String())
 }

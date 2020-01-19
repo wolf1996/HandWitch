@@ -124,6 +124,9 @@ func (b *processCommand) inqueryParams(ctx context.Context, handProcessor core.H
 			return fmt.Errorf("failed request missing parameters from user %w", err)
 		}
 		txt, err := b.tg.Get(ctx)
+		if err != nil {
+			return err
+		}
 		if handle, ok := missingParams[txt]; ok {
 			err := b.handleSingleParam(ctx, handle, params, missingParams)
 			if err != nil {
@@ -145,7 +148,7 @@ PARSE_PARAMS:
 	for _, row := range strings.Split(input, "\n") {
 		name, val, err := parseParamRow(handProcessor, row)
 		if err != nil {
-			b.tg.Send(b.ctx, fmt.Sprintf("Failed to parse param: \"%s\" %s", name, err.Error()))
+			err = b.tg.Send(b.ctx, fmt.Sprintf("Failed to parse param: \"%s\" %s", name, err.Error()))
 			if err != nil {
 				return fmt.Errorf("Failed to send error message to user %w", err)
 			}
@@ -177,6 +180,5 @@ func (proc *processCommand) Process(messageArguments string) error {
 	if err != nil {
 		return err
 	}
-	proc.tg.Send(proc.ctx, respWriter.String())
-	return nil
+	return proc.tg.Send(proc.ctx, respWriter.String())
 }
