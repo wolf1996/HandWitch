@@ -2,7 +2,7 @@ package bot
 
 import (
 	"context"
-	"io"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/wolf1996/HandWitch/pkg/core"
@@ -24,6 +24,12 @@ func NewHelpCommand(ctx context.Context, handProc core.HandProcessor, tg telegra
 	}
 }
 
-func (proc *helpCommand) Process(messageArguments string, writer io.Writer) error {
-	return proc.handProc.WriteHelp(writer)
+func (proc *helpCommand) Process(messageArguments string) error {
+	var respWriter strings.Builder
+	err := proc.handProc.WriteHelp(&respWriter)
+	if err != nil {
+		return err
+	}
+	proc.tg.Send(proc.ctx, respWriter.String())
+	return nil
 }

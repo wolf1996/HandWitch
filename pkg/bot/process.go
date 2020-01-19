@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
@@ -173,7 +172,7 @@ PARSE_PARAMS:
 	return nil
 }
 
-func (proc *processCommand) Process(messageArguments string, writer io.Writer) error {
+func (proc *processCommand) Process(messageArguments string) error {
 	if messageArguments == "" {
 		return errors.New("Empty arguments")
 	}
@@ -182,6 +181,11 @@ func (proc *processCommand) Process(messageArguments string, writer io.Writer) e
 		return err
 	}
 	proc.log.Debugf("Got parameters %v", params)
-	proc.handProc.Process(proc.ctx, writer, params, proc.log)
+	var respWriter strings.Builder
+	err = proc.handProc.Process(proc.ctx, &respWriter, params, proc.log)
+	if err != nil {
+		return err
+	}
+	proc.tg.Send(proc.ctx, respWriter.String())
 	return nil
 }

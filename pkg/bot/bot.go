@@ -1,10 +1,8 @@
 package bot
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"strings"
 
@@ -24,7 +22,7 @@ type (
 )
 
 type comand interface {
-	Process(string, io.Writer) error
+	Process(string) error
 }
 
 type comandFabric = func(ctx context.Context, handProc core.HandProcessor, tg telegram, log *log.Entry) comand
@@ -81,7 +79,7 @@ func (b *Bot) getHandName(messageArguments string) (string, error) {
 	return strings.TrimSpace(handName), nil
 }
 
-func (b *Bot) processCmd(ctx context.Context, writer io.Writer, messageArguments string, message *tgbotapi.Message, input messagesChan, fabric comandFabric, logger *log.Entry) error {
+func (b *Bot) processCmd(ctx context.Context, messageArguments string, message *tgbotapi.Message, input messagesChan, fabric comandFabric, logger *log.Entry) error {
 	if messageArguments == "" {
 		return errors.New("Empty arguments")
 	}
@@ -95,16 +93,16 @@ func (b *Bot) processCmd(ctx context.Context, writer io.Writer, messageArguments
 	}
 	tg := newWrapper(input, b.api, message, b.formating, logger)
 	command := fabric(ctx, handProcessor, tg, logger)
-	command.Process(messageArguments, writer)
+	command.Process(messageArguments)
 	return nil
 }
 
-func (b *Bot) executeMessage(ctx context.Context, writer io.Writer, message *tgbotapi.Message, input messagesChan, logger *log.Entry) error {
+func (b *Bot) executeMessage(ctx context.Context, message *tgbotapi.Message, input messagesChan, logger *log.Entry) error {
 	fabric, ok := b.cmds[message.Command()]
 	if !ok {
 		return fmt.Errorf("Wrong comand %s", message.Command())
 	}
-	return b.processCmd(ctx, writer, message.CommandArguments(), message, input, fabric, logger)
+	return b.processCmd(ctx, message.CommandArguments(), message, input, fabric, logger)
 }
 
 func normilizeMessageMode(raw string) (string, error) {
@@ -123,8 +121,7 @@ func (b *Bot) newHandleMessage(ctx context.Context, message *tgbotapi.Message, i
 		key, _ := getTaskKeyFromMessage(message)
 		delete(b.processing, key)
 	}()
-	var resp bytes.Buffer
-	err := b.executeMessage(ctx, &resp, message, input, logger)
+	err := b.executeMessage(ctx, message, input, logger)
 	if err != nil {
 		errmsg := fmt.Sprintf("Error on processing message %s: %s", message.Text, err.Error())
 		msg := tgbotapi.NewMessage(message.Chat.ID, errmsg)
@@ -132,19 +129,6 @@ func (b *Bot) newHandleMessage(ctx context.Context, message *tgbotapi.Message, i
 		if err != nil {
 			logger.Errorf("Error on sending message %s", err.Error())
 		}
-	}
-
-	msg := tgbotapi.NewMessage(message.Chat.ID, resp.String())
-	if b.formating != "" {
-		logger.Debugf("setting formating: %s", b.formating)
-		msg.ParseMode = b.formating
-	}
-
-	msg.ReplyMarkup = tgbotapi.NewRemoveKeyboard(false)
-
-	_, err = b.api.Send(msg)
-	if err != nil {
-		logger.Errorf("Error on sending message %s:\n message text:\n %s", err.Error(), msg.Text)
 	}
 }
 
