@@ -19,8 +19,8 @@ type processCommand struct {
 	log      *log.Entry
 }
 
-func NewProcessCommand(ctx context.Context, handProc core.HandProcessor, tg telegram, log *log.Entry) processCommand {
-	return processCommand{
+func NewProcessCommand(ctx context.Context, handProc core.HandProcessor, tg telegram, log *log.Entry) comand {
+	return &processCommand{
 		ctx:      ctx,
 		tg:       tg,
 		handProc: handProc,

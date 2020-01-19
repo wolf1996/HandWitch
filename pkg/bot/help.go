@@ -15,8 +15,8 @@ type helpCommand struct {
 	log      *log.Entry
 }
 
-func NewHelpCommand(ctx context.Context, handProc core.HandProcessor, tg telegram, log *log.Entry) helpCommand {
-	return helpCommand{
+func NewHelpCommand(ctx context.Context, handProc core.HandProcessor, tg telegram, log *log.Entry) comand {
+	return &helpCommand{
 		ctx:      ctx,
 		handProc: handProc,
 		tg:       tg,

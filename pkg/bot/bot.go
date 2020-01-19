@@ -23,6 +23,12 @@ type (
 	inProgresTask = map[taskKey]messagesChan
 )
 
+type comand interface {
+	Process(string, io.Writer) error
+}
+
+type comandFabric = func(ctx context.Context, handProc core.HandProcessor, tg telegram, log *log.Entry) comand
+
 func getTaskKeyFromMessage(message *tgbotapi.Message) (taskKey, error) {
 	return taskKey{
 		ChatId: message.Chat.ID,
@@ -37,6 +43,7 @@ type Bot struct {
 	auth       Authorisation
 	formating  string
 	processing inProgresTask
+	cmds       map[string]comandFabric
 }
 
 //TODO: проверить каноничность
@@ -52,12 +59,16 @@ func NewBot(client *http.Client, token string, app core.URLProcessor, auth Autho
 	if err != nil {
 		return nil, fmt.Errorf("Invalid formating %w", err)
 	}
+	cmds := make(map[string]comandFabric)
+	cmds["process"] = NewProcessCommand
+	cmds["help"] = NewHelpCommand
 	return &Bot{
 		api:        bot,
 		app:        app,
 		auth:       auth,
 		formating:  normalizedMessageMode,
 		processing: make(inProgresTask),
+		cmds:       cmds,
 	}, nil
 }
 
@@ -70,7 +81,7 @@ func (b *Bot) getHandName(messageArguments string) (string, error) {
 	return strings.TrimSpace(handName), nil
 }
 
-func (b *Bot) processHand(ctx context.Context, writer io.Writer, messageArguments string, message *tgbotapi.Message, input messagesChan, logger *log.Entry) error {
+func (b *Bot) processCmd(ctx context.Context, writer io.Writer, messageArguments string, message *tgbotapi.Message, input messagesChan, fabric comandFabric, logger *log.Entry) error {
 	if messageArguments == "" {
 		return errors.New("Empty arguments")
 	}
@@ -83,39 +94,17 @@ func (b *Bot) processHand(ctx context.Context, writer io.Writer, messageArgument
 		return err
 	}
 	tg := newWrapper(input, b.api, message, b.formating, logger)
-	processCommand := NewProcessCommand(ctx, handProcessor, tg, logger)
-	processCommand.Process(messageArguments, writer)
-	return nil
-}
-
-func (b *Bot) helpHand(ctx context.Context, writer io.Writer, messageArguments string, message *tgbotapi.Message, input messagesChan, logger *log.Entry) error {
-	if messageArguments == "" {
-		return errors.New("Empty arguments")
-	}
-	handName, err := b.getHandName(messageArguments)
-	if err != nil {
-		return err
-	}
-	handProcessor, err := b.app.GetHand(handName)
-	if err != nil {
-		return err
-	}
-	tg := newWrapper(input, b.api, message, b.formating, logger)
-	processCommand := NewHelpCommand(ctx, handProcessor, tg, logger)
-	processCommand.Process(messageArguments, writer)
+	command := fabric(ctx, handProcessor, tg, logger)
+	command.Process(messageArguments, writer)
 	return nil
 }
 
 func (b *Bot) executeMessage(ctx context.Context, writer io.Writer, message *tgbotapi.Message, input messagesChan, logger *log.Entry) error {
-	switch message.Command() {
-	case "process":
-		logger.Debug("found \"process\" command")
-		return b.processHand(ctx, writer, message.CommandArguments(), message, input, logger)
-	case "help":
-		logger.Debug("found \"help\" command")
-		return b.helpHand(ctx, writer, message.CommandArguments(), message, input, logger)
+	fabric, ok := b.cmds[message.Command()]
+	if !ok {
+		return fmt.Errorf("Wrong comand %s", message.Command())
 	}
-	return fmt.Errorf("Wrong comand %s", message.Command())
+	return b.processCmd(ctx, writer, message.CommandArguments(), message, input, fabric, logger)
 }
 
 func normilizeMessageMode(raw string) (string, error) {
