@@ -117,6 +117,7 @@ func (processor *HandProcessorImp) Process(ctx context.Context, writer io.Writer
 	if err != nil {
 		return fmt.Errorf("Failed to read result %w", err)
 	}
+	defer responce.Body.Close()
 	logger.Debugf("Got responce %s", func() string {
 		bytes, err := httputil.DumpResponse(responce, true)
 		if err != nil {
