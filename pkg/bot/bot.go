@@ -15,8 +15,8 @@ import (
 
 type (
 	taskKey struct {
-		ChatId int64
-		UserId string
+		ChatID int64  // Идентификатор чата
+		UserID string // Идентификатор пользователя
 	}
 	inProgresTask = map[taskKey]messagesChan
 )
@@ -29,8 +29,8 @@ type comandFabric = func(ctx context.Context, handProc core.HandProcessor, tg te
 
 func getTaskKeyFromMessage(message *tgbotapi.Message) (taskKey, error) {
 	return taskKey{
-		ChatId: message.Chat.ID,
-		UserId: message.From.UserName,
+		ChatID: message.Chat.ID,
+		UserID: message.From.UserName,
 	}, nil
 }
 
