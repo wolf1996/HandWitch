@@ -205,8 +205,8 @@ func (st *finishState) Do() (processingState, error) {
 	if err != nil {
 		return nil, err
 	}
-	st.tg.Send(st.ctx, respWriter.String())
-	return nil, nil
+	err = st.tg.Send(st.ctx, respWriter.String())
+	return nil, err
 }
 
 //-------------------------------------------------- base methods -----------------------------------------------------------
