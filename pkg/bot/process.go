@@ -10,10 +10,19 @@ import (
 	"github.com/wolf1996/HandWitch/pkg/core"
 )
 
+type processCommand struct {
+	ctx      context.Context
+	tg       telegram
+	handProc core.HandProcessor
+	log      *log.Entry
+}
+
+// processingState базовый интерфейс для процессинга
 type processingState interface {
 	Do() (processingState, error)
 }
 
+// baseState базовое состояние хранящее всю информацию необходимую для работы в общем случае
 type baseState struct {
 	logger        *log.Entry
 	ctx           context.Context
@@ -21,30 +30,25 @@ type baseState struct {
 	tg            telegram
 }
 
+// startState начальное состояние разбирающее стартовые аргументы
 type startState struct {
 	baseState
 	arguments string
 }
 
+// inqueryParamsState состояние дозапроса аргументов (если нет пропущенных - идём дальше)
 type inqueryParamsState struct {
 	baseState
 	params map[string]interface{}
 }
 
+// finishState пишем результат
 type finishState struct {
 	baseState
 	params map[string]interface{}
 }
 
-func getMissingParams(requiredParams map[string]core.ParamProcessor, params map[string]interface{}) map[string]core.ParamProcessor {
-	missingParams := make(map[string]core.ParamProcessor)
-	for _, param := range requiredParams {
-		if _, ok := params[param.GetInfo().Name]; !ok {
-			missingParams[param.GetInfo().Name] = param
-		}
-	}
-	return missingParams
-}
+//--------------------------------------------- start states methods -------------------------------------------------------
 
 func (st *startState) Do() (processingState, error) {
 	params := make(map[string]interface{})
@@ -65,6 +69,27 @@ func (st *startState) Do() (processingState, error) {
 		st.baseState,
 		params,
 	}, nil
+}
+
+//--------------------------------------------- inquery states methods -------------------------------------------------------
+
+func parseParamRow(handProcessor core.HandProcessor, messageRow string) (string, interface{}, error) {
+	splited := strings.Fields(messageRow)
+	//TODO: сделать более адекватный парсинг, с возможностью пробелов в значениях
+	if len(splited) != 2 {
+		return "", nil, fmt.Errorf("Failed to parse param row %s, splited on %d args instead 2", messageRow, len(splited))
+	}
+	paramName := splited[0]
+	paramValueStr := splited[1]
+	paramProcessor, err := handProcessor.GetParam(paramName)
+	if err != nil {
+		return "", nil, err
+	}
+	value, err := paramProcessor.ParseFromString(paramValueStr)
+	if err != nil {
+		return "", nil, err
+	}
+	return paramName, value, nil
 }
 
 func (st *inqueryParamsState) parseAll(input string, missingParams map[string]core.ParamProcessor) error {
@@ -172,6 +197,8 @@ func (st *inqueryParamsState) Do() (processingState, error) {
 	}, nil
 }
 
+//--------------------------------------------- finish states methods -------------------------------------------------------
+
 func (st *finishState) Do() (processingState, error) {
 	var respWriter strings.Builder
 	err := st.handProcessor.Process(st.ctx, &respWriter, st.params, st.logger)
@@ -182,39 +209,15 @@ func (st *finishState) Do() (processingState, error) {
 	return nil, nil
 }
 
-type processCommand struct {
-	ctx      context.Context
-	tg       telegram
-	handProc core.HandProcessor
-	log      *log.Entry
-}
+//-------------------------------------------------- base methods -----------------------------------------------------------
 
-func NewProcessCommand(ctx context.Context, handProc core.HandProcessor, tg telegram, log *log.Entry) comand {
+func newProcessCommand(ctx context.Context, handProc core.HandProcessor, tg telegram, log *log.Entry) comand {
 	return &processCommand{
 		ctx:      ctx,
 		tg:       tg,
 		handProc: handProc,
 		log:      log,
 	}
-}
-
-func parseParamRow(handProcessor core.HandProcessor, messageRow string) (string, interface{}, error) {
-	splited := strings.Fields(messageRow)
-	//TODO: сделать более адекватный парсинг, с возможностью пробелов в значениях
-	if len(splited) != 2 {
-		return "", nil, fmt.Errorf("Failed to parse param row %s, splited on %d args instead 2", messageRow, len(splited))
-	}
-	paramName := splited[0]
-	paramValueStr := splited[1]
-	paramProcessor, err := handProcessor.GetParam(paramName)
-	if err != nil {
-		return "", nil, err
-	}
-	value, err := paramProcessor.ParseFromString(paramValueStr)
-	if err != nil {
-		return "", nil, err
-	}
-	return paramName, value, nil
 }
 
 func (proc *processCommand) Process(messageArguments string) error {

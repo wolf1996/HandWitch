@@ -56,8 +56,8 @@ func NewBot(client *http.Client, token string, app core.URLProcessor, auth Autho
 		return nil, fmt.Errorf("Invalid formating %w", err)
 	}
 	cmds := make(map[string]comandFabric)
-	cmds["process"] = NewProcessCommand
-	cmds["help"] = NewHelpCommand
+	cmds["process"] = newProcessCommand
+	cmds["help"] = newHelpCommand
 	return &Bot{
 		api:        bot,
 		app:        app,
