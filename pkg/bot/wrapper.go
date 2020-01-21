@@ -73,11 +73,13 @@ func (wp *wrapper) Send(ctx context.Context, msgTxt string) error {
 }
 
 func buildKeyboard(missingParams map[string]core.ParamProcessor) tgbotapi.ReplyKeyboardMarkup {
-	buttons := make([]tgbotapi.KeyboardButton, 0)
+	buttons := make([][]tgbotapi.KeyboardButton, 0)
 	for paramName := range missingParams {
-		buttons = append(buttons, tgbotapi.NewKeyboardButton(paramName))
+		paramButton := tgbotapi.NewKeyboardButton(paramName)
+		helpButton := tgbotapi.NewKeyboardButton(fmt.Sprintf("🤖 help %s", paramName))
+		buttons = append(buttons, []tgbotapi.KeyboardButton{paramButton, helpButton})
 	}
-	return tgbotapi.NewReplyKeyboard(buttons)
+	return tgbotapi.NewReplyKeyboard(buttons...)
 }
 
 func (wp *wrapper) RequestParams(missingParams map[string]core.ParamProcessor) error {
