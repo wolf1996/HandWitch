@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"unicode/utf8"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/wolf1996/HandWitch/pkg/core"
@@ -46,6 +47,14 @@ type inqueryParamsState struct {
 type finishState struct {
 	baseState
 	params map[string]interface{}
+}
+
+// finishState пишем результат
+type queryParam struct {
+	baseState
+	paramProcessor core.ParamProcessor
+	params         map[string]interface{}
+	missingParams  map[string]core.ParamProcessor
 }
 
 //--------------------------------------------- start states methods -------------------------------------------------------
@@ -116,55 +125,28 @@ PARSE_PARAMS:
 	return nil
 }
 
-func (st *inqueryParamsState) handleSingleParam(paramProcessor core.ParamProcessor, missingParams map[string]core.ParamProcessor) error {
-	// TODO: сделать более подробное описание в сообщении, возможно - хэлп
-	err := st.tg.Send(st.ctx, fmt.Sprintf("Input value for param: \"%s\"", paramProcessor.GetInfo().Name))
-	if err != nil {
-		//TODO проверить обработку ошибок и ретраи
-		return fmt.Errorf("failed request missing parameters from user %w", err)
-	}
-LOOP:
-	for {
-		inp, err := st.tg.Get(st.ctx)
-		if err != nil {
-			continue LOOP
-		}
-		value, err := paramProcessor.ParseFromString(inp)
-		if err != nil {
-			err = st.tg.Send(st.ctx, fmt.Sprintf("Failed to parse param:  %s", err.Error()))
+func (st *inqueryParamsState) checkComand(missingParams map[string]core.ParamProcessor, msg string) error {
+	r, size := utf8.DecodeRuneInString(msg)
+	if r == '🤖' {
+		txt := msg[size+1:]
+		fields := strings.Fields(txt)
+		cmd, param := fields[0], fields[1]
+		if cmd == "help" {
+			var respWriter strings.Builder
+			paramProc, err := st.handProcessor.GetParam(param)
 			if err != nil {
-				return fmt.Errorf("Failed to send error message to user %w", err)
+				return err
 			}
-			continue LOOP
-		}
-		delete(missingParams, paramProcessor.GetInfo().Name)
-		st.params[paramProcessor.GetInfo().Name] = value
-		break
-	}
-	return nil
-}
-
-func (st *inqueryParamsState) inqueryParams(missingParams map[string]core.ParamProcessor) error {
-	for len(missingParams) != 0 {
-		err := st.tg.RequestParams(missingParams)
-		if err != nil {
-			//TODO проверить обработку ошибок и ретраи
-			return fmt.Errorf("failed request missing parameters from user %w", err)
-		}
-		txt, err := st.tg.Get(st.ctx)
-		if err != nil {
-			return err
-		}
-		if handle, ok := missingParams[txt]; ok {
-			err := st.handleSingleParam(handle, missingParams)
+			err = paramProc.WriteHelp(&respWriter)
+			if err != nil {
+				return err
+			}
+			err = st.tg.Send(st.ctx, respWriter.String())
 			if err != nil {
 				return err
 			}
 		} else {
-			err := st.parseAll(txt, missingParams)
-			if err != nil {
-				return err
-			}
+			return fmt.Errorf("Unknown comand %s", cmd)
 		}
 	}
 	return nil
@@ -187,11 +169,65 @@ func (st *inqueryParamsState) Do() (processingState, error) {
 	}
 
 	missingParams := getMissingParams()
-	err = st.inqueryParams(missingParams)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to inquery params %w", err)
+
+	for len(missingParams) != 0 {
+		err := st.tg.RequestParams(missingParams)
+		if err != nil {
+			//TODO проверить обработку ошибок и ретраи
+			return nil, fmt.Errorf("failed request missing parameters from user %w", err)
+		}
+		txt, err := st.tg.Get(st.ctx)
+		if err != nil {
+			return nil, err
+		}
+		if handle, ok := missingParams[txt]; ok {
+			return &queryParam{
+				st.baseState,
+				handle,
+				st.params,
+				missingParams,
+			}, nil
+		}
+		_ = st.tg.Send(st.ctx, fmt.Sprintf("I don't know wat is: \"%s\"", txt))
 	}
+
 	return &finishState{
+		st.baseState,
+		st.params,
+	}, nil
+}
+
+//-------------------------------------------- queryParam states methods -------------------------------------------------------
+
+func (st *queryParam) Do() (processingState, error) {
+	err := st.tg.Send(st.ctx, fmt.Sprintf("Input value for param: \"%s\"", st.paramProcessor.GetInfo().Name))
+	if err != nil {
+		//TODO проверить обработку ошибок и ретраи
+		return nil, fmt.Errorf("failed request missing parameters from user %w", err)
+	}
+LOOP:
+	for {
+		inp, err := st.tg.Get(st.ctx)
+		if err != nil {
+			continue LOOP
+		}
+		value, err := st.paramProcessor.ParseFromString(inp)
+		if err != nil {
+			err = st.tg.Send(st.ctx, fmt.Sprintf("Failed to parse param:  %s", err.Error()))
+			if err != nil {
+				return nil, fmt.Errorf("Failed to send error message to user %w", err)
+			}
+			continue LOOP
+		}
+		if _, ok := st.missingParams[st.paramProcessor.GetInfo().Name]; ok {
+			delete(st.missingParams, st.paramProcessor.GetInfo().Name)
+
+		}
+		st.params[st.paramProcessor.GetInfo().Name] = value
+		break
+	}
+
+	return &inqueryParamsState{
 		st.baseState,
 		st.params,
 	}, nil
