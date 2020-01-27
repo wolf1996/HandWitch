@@ -125,14 +125,15 @@ PARSE_PARAMS:
 }
 
 func (st *inqueryParamsState) helpCommand(msg string) (processingState, error) {
-	fields := strings.Fields(msg)
-	if len(fields) != 2 {
-		return nil, fmt.Errorf("Invalid number of fields \"%s\"", msg)
+
+	if !strings.HasPrefix(msg, "🤖 help") {
+		return nil, fmt.Errorf("Invalid comand %s", msg)
 	}
-	cmd, param := fields[0], fields[1]
-	if cmd != "🤖help" {
-		return nil, fmt.Errorf("Invalid comand %s", cmd)
-	}
+	var param string
+	// TODO: унифицировать работу с кнопками
+	// сделать генерацию кнопок и их парсинг через один формат
+	fmt.Sscanf(msg, "🤖 help %s", &param)
+
 	var respWriter strings.Builder
 	paramProc, err := st.handProcessor.GetParam(param)
 	if err != nil {
