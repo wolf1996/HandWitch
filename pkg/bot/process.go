@@ -168,6 +168,30 @@ func (st *inqueryParamsState) Do() (processingState, error) {
 
 	missingParams := getMissingParams()
 
+	cmdProcessors := buttonRouters{
+		func(msg string) (processingState, error) {
+			state, err := st.helpCommand(msg)
+			if err != nil {
+				st.logger.Debug("Failed to apply help %s", err.Error())
+			} else {
+				st.logger.Debug("Ok to apply help!")
+			}
+			return state, err
+		},
+		func(msg string) (processingState, error) {
+			if handle, ok := missingParams[msg]; ok {
+				return &queryParam{
+					st.baseState,
+					handle,
+					st.params,
+					missingParams,
+				}, nil
+			}
+			st.logger.Debug("Failed to move to queryParam %s no such param", msg)
+			return nil, fmt.Errorf("No such param %s", msg)
+		},
+	}
+
 	for len(missingParams) != 0 {
 		err := st.tg.RequestParams(missingParams)
 		if err != nil {
@@ -178,24 +202,15 @@ func (st *inqueryParamsState) Do() (processingState, error) {
 		if err != nil {
 			return nil, err
 		}
-		state, err := st.helpCommand(txt)
+		state, err := applyMessageRouters(txt, cmdProcessors)
 		if err == nil {
-			if state == nil {
-				continue
-			} else {
+			if state != nil {
 				return state, nil
 			}
+			continue
 		}
-		st.logger.Debug("can't apply help %s", err.Error())
-		if handle, ok := missingParams[txt]; ok {
-			return &queryParam{
-				st.baseState,
-				handle,
-				st.params,
-				missingParams,
-			}, nil
-		}
-		_ = st.tg.Send(st.ctx, fmt.Sprintf("I don't know wat is: \"%s\"", txt))
+		st.logger.Debugf("Error on apply routers %s", err.Error())
+		_ = st.tg.Send(st.ctx, fmt.Sprintf("I don't know what is: \"%s\"", txt))
 	}
 
 	return &finishState{
