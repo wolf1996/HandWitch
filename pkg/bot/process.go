@@ -48,6 +48,11 @@ type finishState struct {
 	params map[string]interface{}
 }
 
+// cancelState пишем результат
+type cancelState struct {
+	baseState
+}
+
 // finishState пишем результат
 type queryParam struct {
 	baseState
@@ -195,9 +200,29 @@ func (st *inqueryParamsState) Do() (processingState, error) {
 			st.logger.Debug("Failed to move to queryParam %s no such param", msg)
 			return nil, fmt.Errorf("No such param %s", msg)
 		},
+		func(msg string) (processingState, error) {
+			if msg == "🤖 hand help" {
+				var respWriter strings.Builder
+				err := st.handProcessor.WriteHelp(&respWriter)
+				if err != nil {
+					return nil, err
+				}
+				err = st.tg.Send(st.ctx, respWriter.String())
+				return nil, nil
+			}
+			return nil, fmt.Errorf("Not cancel command")
+		},
+		func(msg string) (processingState, error) {
+			if msg == "🤖 cancel" {
+				return &cancelState{
+					baseState: st.baseState,
+				}, nil
+			}
+			return nil, fmt.Errorf("Not cancel command")
+		},
 	}
-
-	for len(missingParams) != 0 {
+	// TODO: задуматься! кажется я делаю что-то не так!
+	for {
 		paramsProcessors, err := st.handProcessor.GetParams()
 		if err != nil {
 			return nil, fmt.Errorf("failed request parameters from user %w", err)
@@ -273,6 +298,13 @@ func (st *finishState) Do() (processingState, error) {
 		return nil, err
 	}
 	err = st.tg.Send(st.ctx, respWriter.String())
+	return nil, err
+}
+
+//--------------------------------------------- cancel states methods -------------------------------------------------------
+
+func (st *cancelState) Do() (processingState, error) {
+	err := st.tg.Send(st.ctx, "Canceled")
 	return nil, err
 }
 
