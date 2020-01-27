@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"strings"
-	"unicode/utf8"
 
 	log "github.com/sirupsen/logrus"
 	"github.com/wolf1996/HandWitch/pkg/core"
@@ -125,31 +124,29 @@ PARSE_PARAMS:
 	return nil
 }
 
-func (st *inqueryParamsState) checkComand(missingParams map[string]core.ParamProcessor, msg string) error {
-	r, size := utf8.DecodeRuneInString(msg)
-	if r == '🤖' {
-		txt := msg[size+1:]
-		fields := strings.Fields(txt)
-		cmd, param := fields[0], fields[1]
-		if cmd == "help" {
-			var respWriter strings.Builder
-			paramProc, err := st.handProcessor.GetParam(param)
-			if err != nil {
-				return err
-			}
-			err = paramProc.WriteHelp(&respWriter)
-			if err != nil {
-				return err
-			}
-			err = st.tg.Send(st.ctx, respWriter.String())
-			if err != nil {
-				return err
-			}
-		} else {
-			return fmt.Errorf("Unknown comand %s", cmd)
-		}
+func (st *inqueryParamsState) helpCommand(msg string) (processingState, error) {
+	fields := strings.Fields(msg)
+	if len(fields) != 2 {
+		return nil, fmt.Errorf("Invalid number of fields \"%s\"", msg)
 	}
-	return nil
+	cmd, param := fields[0], fields[1]
+	if cmd != "🤖help" {
+		return nil, fmt.Errorf("Invalid comand %s", cmd)
+	}
+	var respWriter strings.Builder
+	paramProc, err := st.handProcessor.GetParam(param)
+	if err != nil {
+		return nil, err
+	}
+	err = paramProc.WriteHelp(&respWriter)
+	if err != nil {
+		return nil, err
+	}
+	err = st.tg.Send(st.ctx, respWriter.String())
+	if err != nil {
+		return nil, err
+	}
+	return nil, nil
 }
 
 func (st *inqueryParamsState) Do() (processingState, error) {
@@ -180,6 +177,15 @@ func (st *inqueryParamsState) Do() (processingState, error) {
 		if err != nil {
 			return nil, err
 		}
+		state, err := st.helpCommand(txt)
+		if err == nil {
+			if state == nil {
+				continue
+			} else {
+				return state, nil
+			}
+		}
+		st.logger.Debug("can't apply help %s", err.Error())
 		if handle, ok := missingParams[txt]; ok {
 			return &queryParam{
 				st.baseState,

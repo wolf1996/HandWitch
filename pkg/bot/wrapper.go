@@ -76,7 +76,7 @@ func buildKeyboard(missingParams map[string]core.ParamProcessor) tgbotapi.ReplyK
 	buttons := make([][]tgbotapi.KeyboardButton, 0)
 	for paramName := range missingParams {
 		paramButton := tgbotapi.NewKeyboardButton(paramName)
-		helpButton := tgbotapi.NewKeyboardButton(fmt.Sprintf("🤖 help %s", paramName))
+		helpButton := tgbotapi.NewKeyboardButton(fmt.Sprintf("🤖help %s", paramName))
 		buttons = append(buttons, []tgbotapi.KeyboardButton{paramButton, helpButton})
 	}
 	return tgbotapi.NewReplyKeyboard(buttons...)
