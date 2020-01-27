@@ -213,6 +213,19 @@ func (st *inqueryParamsState) Do() (processingState, error) {
 			return nil, fmt.Errorf("Not cancel command")
 		},
 		func(msg string) (processingState, error) {
+			if msg == "🤖 Start!" {
+				if len(missingParams) == 0 {
+					return &finishState{
+						st.baseState,
+						st.params,
+					}, nil
+				}
+				st.tg.Send(st.ctx, "Not all params specified!")
+				return nil, fmt.Errorf("Not all params specified")
+			}
+			return nil, fmt.Errorf("Not cancel command")
+		},
+		func(msg string) (processingState, error) {
 			if msg == "🤖 cancel" {
 				return &cancelState{
 					baseState: st.baseState,
@@ -246,11 +259,6 @@ func (st *inqueryParamsState) Do() (processingState, error) {
 		st.logger.Debugf("Error on apply routers %s", err.Error())
 		_ = st.tg.Send(st.ctx, fmt.Sprintf("I don't know what is: \"%s\"", txt))
 	}
-
-	return &finishState{
-		st.baseState,
-		st.params,
-	}, nil
 }
 
 //-------------------------------------------- queryParam states methods -------------------------------------------------------

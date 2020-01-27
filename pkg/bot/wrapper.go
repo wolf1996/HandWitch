@@ -77,9 +77,10 @@ func getHelpRow() []tgbotapi.KeyboardButton {
 	return []tgbotapi.KeyboardButton{helpButton}
 }
 
-func getCancelRow() []tgbotapi.KeyboardButton {
+func getCancelOkRow() []tgbotapi.KeyboardButton {
+	okButton := tgbotapi.NewKeyboardButton("🤖 Start!")
 	cancelButton := tgbotapi.NewKeyboardButton("🤖 cancel")
-	return []tgbotapi.KeyboardButton{cancelButton}
+	return []tgbotapi.KeyboardButton{okButton, cancelButton}
 }
 
 func buildKeyboard(missingParams map[string]core.ParamProcessor) tgbotapi.ReplyKeyboardMarkup {
@@ -90,7 +91,7 @@ func buildKeyboard(missingParams map[string]core.ParamProcessor) tgbotapi.ReplyK
 		buttons = append(buttons, []tgbotapi.KeyboardButton{paramButton, helpButton})
 	}
 	buttons = append(buttons, getHelpRow())
-	buttons = append(buttons, getCancelRow())
+	buttons = append(buttons, getCancelOkRow())
 	return tgbotapi.NewReplyKeyboard(buttons...)
 }
 
