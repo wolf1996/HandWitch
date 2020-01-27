@@ -18,7 +18,7 @@ type (
 type telegram interface {
 	Get(ctx context.Context) (message, error)
 	Send(ctx context.Context, msg string) error
-	RequestParams(map[string]core.ParamProcessor) error
+	RequestParams(missingParams map[string]core.ParamProcessor, params map[string]core.ParamProcessor, values map[string]interface{}) error
 }
 
 type wrapper struct {
@@ -82,14 +82,28 @@ func buildKeyboard(missingParams map[string]core.ParamProcessor) tgbotapi.ReplyK
 	return tgbotapi.NewReplyKeyboard(buttons...)
 }
 
-func (wp *wrapper) RequestParams(missingParams map[string]core.ParamProcessor) error {
+func addMissing(writer *strings.Builder, missingParams map[string]core.ParamProcessor) {
 	var paramsNames []string
 	for _, param := range missingParams {
 		paramsNames = append(paramsNames, param.GetInfo().Name)
 	}
 	missingParamsList := strings.Join(paramsNames, "\", \"")
-	msg := tgbotapi.NewMessage(wp.chat.ID, fmt.Sprintf("Missed params: \"%s\"", missingParamsList))
-	keyboard := buildKeyboard(missingParams)
+	writer.WriteString(fmt.Sprintf("Missed params: \"%s\" \n", missingParamsList))
+}
+
+func addValues(writer *strings.Builder, params map[string]core.ParamProcessor, values map[string]interface{}) {
+	writer.WriteString("Current values: \n")
+	for name, val := range values {
+		writer.WriteString(fmt.Sprintf("%s %v \n", name, val))
+	}
+}
+
+func (wp *wrapper) RequestParams(missingParams map[string]core.ParamProcessor, params map[string]core.ParamProcessor, values map[string]interface{}) error {
+	var rspBuilder strings.Builder
+	addValues(&rspBuilder, params, values)
+	addMissing(&rspBuilder, missingParams)
+	msg := tgbotapi.NewMessage(wp.chat.ID, rspBuilder.String())
+	keyboard := buildKeyboard(params)
 	msg.ReplyMarkup = keyboard
 	_, err := wp.api.Send(msg)
 	if err != nil {

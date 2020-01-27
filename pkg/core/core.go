@@ -105,6 +105,7 @@ type HandProcessor interface {
 	GetInfo() *URLRecord
 	GetParam(string) (ParamProcessor, error)
 	GetRequiredParams() ([]ParamProcessor, error)
+	GetParams() (map[string]ParamProcessor, error)
 }
 
 //ParamProcessor param processor handles param descriptions

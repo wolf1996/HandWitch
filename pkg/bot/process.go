@@ -179,7 +179,12 @@ func (st *inqueryParamsState) Do() (processingState, error) {
 			return state, err
 		},
 		func(msg string) (processingState, error) {
-			if handle, ok := missingParams[msg]; ok {
+			params, err := st.handProcessor.GetParams()
+			if err != nil {
+				st.logger.Errorf("Failed to get params for hand")
+				return nil, err
+			}
+			if handle, ok := params[msg]; ok {
 				return &queryParam{
 					st.baseState,
 					handle,
@@ -193,7 +198,11 @@ func (st *inqueryParamsState) Do() (processingState, error) {
 	}
 
 	for len(missingParams) != 0 {
-		err := st.tg.RequestParams(missingParams)
+		paramsProcessors, err := st.handProcessor.GetParams()
+		if err != nil {
+			return nil, fmt.Errorf("failed request parameters from user %w", err)
+		}
+		err = st.tg.RequestParams(missingParams, paramsProcessors, st.params)
 		if err != nil {
 			//TODO проверить обработку ошибок и ретраи
 			return nil, fmt.Errorf("failed request missing parameters from user %w", err)
