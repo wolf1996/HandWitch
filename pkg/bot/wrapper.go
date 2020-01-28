@@ -10,6 +10,18 @@ import (
 	"github.com/wolf1996/HandWitch/pkg/core"
 )
 
+// ExtraButton comands to add special buttons to messages
+type ExtraButton int
+
+const (
+	// CancelButton button
+	CancelButton = iota
+	// OkButton button
+	OkButton
+	// HelpButton button
+	HelpButton
+)
+
 type (
 	messagesChan = chan *tgbotapi.Message
 	message      = string
@@ -18,7 +30,7 @@ type (
 type telegram interface {
 	Get(ctx context.Context) (message, error)
 	Send(ctx context.Context, msg string) error
-	RequestParams(missingParams map[string]core.ParamProcessor, params map[string]core.ParamProcessor, values map[string]interface{}) error
+	RequestParams(missingParams map[string]core.ParamProcessor, params map[string]core.ParamProcessor, values map[string]interface{}, buttons []ExtraButton) error
 }
 
 type wrapper struct {
@@ -72,30 +84,59 @@ func (wp *wrapper) Send(ctx context.Context, msgTxt string) error {
 	return nil
 }
 
-func getHelpRow() []tgbotapi.KeyboardButton {
-	helpButton := tgbotapi.NewKeyboardButton("🤖 hand help")
-	return []tgbotapi.KeyboardButton{helpButton}
-}
-
-func getCancelOkRow() []tgbotapi.KeyboardButton {
-	okButton := tgbotapi.NewKeyboardButton("🤖 Start!")
-	cancelButton := tgbotapi.NewKeyboardButton("🤖 cancel")
-	return []tgbotapi.KeyboardButton{okButton, cancelButton}
-}
-
-func buildKeyboard(missingParams map[string]core.ParamProcessor) tgbotapi.ReplyKeyboardMarkup {
+func buildKeyboard(missingParams map[string]core.ParamProcessor, buttonsDescriptions []ExtraButton) ([][]tgbotapi.KeyboardButton, error) {
 	buttons := make([][]tgbotapi.KeyboardButton, 0)
 	for paramName := range missingParams {
 		paramButton := tgbotapi.NewKeyboardButton(paramName)
 		helpButton := tgbotapi.NewKeyboardButton(fmt.Sprintf("🤖 help %s", paramName))
 		buttons = append(buttons, []tgbotapi.KeyboardButton{paramButton, helpButton})
 	}
-	buttons = append(buttons, getHelpRow())
-	buttons = append(buttons, getCancelOkRow())
-	return tgbotapi.NewReplyKeyboard(buttons...)
+	additionalButtons, err := getCustomButtons(buttonsDescriptions)
+	if err != nil {
+		return buttons, err
+	}
+	buttons = append(buttons, additionalButtons)
+	return buttons, nil
+}
+
+func getCustomButton(buttonDescription ExtraButton) (*tgbotapi.KeyboardButton, error) {
+	switch buttonDescription {
+	case CancelButton:
+		{
+			button := tgbotapi.NewKeyboardButton("🤖 cancel")
+			return &button, nil
+		}
+	case OkButton:
+		{
+			button := tgbotapi.NewKeyboardButton("🤖 Start!")
+			return &button, nil
+		}
+	case HelpButton:
+		{
+			button := tgbotapi.NewKeyboardButton("🤖 hand help")
+			return &button, nil
+		}
+	}
+	return nil, fmt.Errorf("Failed to get custom button %d", buttonDescription)
+}
+
+func getCustomButtons(buttons []ExtraButton) ([]tgbotapi.KeyboardButton, error) {
+	result := make([]tgbotapi.KeyboardButton, 0)
+
+	for _, buttonDescr := range buttons {
+		button, err := getCustomButton(buttonDescr)
+		if err != nil {
+			return result, err
+		}
+		result = append(result, *button)
+	}
+	return result, nil
 }
 
 func addMissing(writer *strings.Builder, missingParams map[string]core.ParamProcessor) {
+	if len(missingParams) == 0 {
+		return
+	}
 	var paramsNames []string
 	for _, param := range missingParams {
 		paramsNames = append(paramsNames, param.GetInfo().Name)
@@ -105,20 +146,26 @@ func addMissing(writer *strings.Builder, missingParams map[string]core.ParamProc
 }
 
 func addValues(writer *strings.Builder, params map[string]core.ParamProcessor, values map[string]interface{}) {
+	if len(params) == 0 {
+		return
+	}
 	writer.WriteString("Current values: \n")
 	for name, val := range values {
 		writer.WriteString(fmt.Sprintf("%s %v \n", name, val))
 	}
 }
 
-func (wp *wrapper) RequestParams(missingParams map[string]core.ParamProcessor, params map[string]core.ParamProcessor, values map[string]interface{}) error {
+func (wp *wrapper) RequestParams(missingParams map[string]core.ParamProcessor, params map[string]core.ParamProcessor, values map[string]interface{}, buttons []ExtraButton) error {
 	var rspBuilder strings.Builder
 	addValues(&rspBuilder, params, values)
 	addMissing(&rspBuilder, missingParams)
 	msg := tgbotapi.NewMessage(wp.chat.ID, rspBuilder.String())
-	keyboard := buildKeyboard(params)
-	msg.ReplyMarkup = keyboard
-	_, err := wp.api.Send(msg)
+	keyboardRows, err := buildKeyboard(params, buttons)
+	if err != nil {
+		return fmt.Errorf("Failed while keyboard build %w", err)
+	}
+	msg.ReplyMarkup = tgbotapi.NewReplyKeyboard(keyboardRows...)
+	_, err = wp.api.Send(msg)
 	if err != nil {
 		//TODO проверить обработку ошибок и ретраи
 		return fmt.Errorf("failed request missing parameters from user %w", err)

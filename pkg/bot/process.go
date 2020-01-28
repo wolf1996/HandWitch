@@ -240,7 +240,15 @@ func (st *inqueryParamsState) Do() (processingState, error) {
 		if err != nil {
 			return nil, fmt.Errorf("failed request parameters from user %w", err)
 		}
-		err = st.tg.RequestParams(missingParams, paramsProcessors, st.params)
+		extraButtons := []ExtraButton{
+			HelpButton, CancelButton,
+		}
+		if len(missingParams) == 0 {
+			extraButtons = []ExtraButton{
+				OkButton, HelpButton, CancelButton,
+			}
+		}
+		err = st.tg.RequestParams(missingParams, paramsProcessors, st.params, extraButtons)
 		if err != nil {
 			//TODO проверить обработку ошибок и ретраи
 			return nil, fmt.Errorf("failed request missing parameters from user %w", err)
