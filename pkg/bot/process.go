@@ -273,10 +273,7 @@ LOOP:
 			}
 			continue LOOP
 		}
-		if _, ok := st.missingParams[st.paramProcessor.GetInfo().Name]; ok {
-			delete(st.missingParams, st.paramProcessor.GetInfo().Name)
-
-		}
+		delete(st.missingParams, st.paramProcessor.GetInfo().Name)
 		st.params[st.paramProcessor.GetInfo().Name] = value
 		break
 	}
