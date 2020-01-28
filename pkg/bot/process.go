@@ -107,13 +107,13 @@ func parseParamRow(handProcessor core.HandProcessor, messageRow string) (string,
 
 func (st *inqueryParamsState) helpCommand(msg string) (processingState, error) {
 
-	if !strings.HasPrefix(msg, "🤖 help") {
+	if !strings.HasPrefix(msg, ParamHelpButtonContent) {
 		return nil, fmt.Errorf("Invalid comand %s", msg)
 	}
 	var param string
 	// TODO: унифицировать работу с кнопками
 	// сделать генерацию кнопок и их парсинг через один формат
-	fmt.Sscanf(msg, "🤖 help %s", &param)
+	fmt.Sscanf(msg, ParamHelpButtonContent+" %s", &param)
 
 	var respWriter strings.Builder
 	paramProc, err := st.handProcessor.GetParam(param)
@@ -177,7 +177,7 @@ func (st *inqueryParamsState) Do() (processingState, error) {
 			return nil, fmt.Errorf("No such param %s", msg)
 		},
 		func(msg string) (processingState, error) {
-			if msg == "🤖 hand help" {
+			if msg == HandHelpButtonContent {
 				var respWriter strings.Builder
 				err := st.handProcessor.WriteHelp(&respWriter)
 				if err != nil {
@@ -192,7 +192,7 @@ func (st *inqueryParamsState) Do() (processingState, error) {
 			return nil, fmt.Errorf("Not cancel command")
 		},
 		func(msg string) (processingState, error) {
-			if msg == "🤖 Start!" {
+			if msg == OkButtonContent {
 				if len(missingParams) == 0 {
 					return &finishState{
 						st.baseState,
@@ -208,7 +208,7 @@ func (st *inqueryParamsState) Do() (processingState, error) {
 			return nil, fmt.Errorf("Not cancel command")
 		},
 		func(msg string) (processingState, error) {
-			if msg == "🤖 cancel" {
+			if msg == CancelButtonContent {
 				return &cancelState{
 					baseState: st.baseState,
 				}, nil

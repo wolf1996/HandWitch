@@ -22,6 +22,17 @@ const (
 	HelpButton
 )
 
+const (
+	// ParamHelpButtonContent prefix of string in parameter help button
+	ParamHelpButtonContent = "🤖 help"
+	// HandHelpButtonContent data of string in hand help button
+	HandHelpButtonContent = "🤖 hand help"
+	// OkButtonContent data of string in Ok button
+	OkButtonContent = "🤖 Start!"
+	// CancelButtonContent data of string in Cancel button
+	CancelButtonContent = "🤖 cancel"
+)
+
 type (
 	messagesChan = chan *tgbotapi.Message
 	message      = string
@@ -88,7 +99,7 @@ func buildKeyboard(missingParams map[string]core.ParamProcessor, buttonsDescript
 	buttons := make([][]tgbotapi.KeyboardButton, 0)
 	for paramName := range missingParams {
 		paramButton := tgbotapi.NewKeyboardButton(paramName)
-		helpButton := tgbotapi.NewKeyboardButton(fmt.Sprintf("🤖 help %s", paramName))
+		helpButton := tgbotapi.NewKeyboardButton(fmt.Sprintf("%s %s", ParamHelpButtonContent, paramName))
 		buttons = append(buttons, []tgbotapi.KeyboardButton{paramButton, helpButton})
 	}
 	additionalButtons, err := getCustomButtons(buttonsDescriptions)
@@ -103,17 +114,17 @@ func getCustomButton(buttonDescription ExtraButton) (*tgbotapi.KeyboardButton, e
 	switch buttonDescription {
 	case CancelButton:
 		{
-			button := tgbotapi.NewKeyboardButton("🤖 cancel")
+			button := tgbotapi.NewKeyboardButton(CancelButtonContent)
 			return &button, nil
 		}
 	case OkButton:
 		{
-			button := tgbotapi.NewKeyboardButton("🤖 Start!")
+			button := tgbotapi.NewKeyboardButton(OkButtonContent)
 			return &button, nil
 		}
 	case HelpButton:
 		{
-			button := tgbotapi.NewKeyboardButton("🤖 hand help")
+			button := tgbotapi.NewKeyboardButton(HandHelpButtonContent)
 			return &button, nil
 		}
 	}
