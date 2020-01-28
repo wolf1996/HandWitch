@@ -177,7 +177,7 @@ func (st *inqueryParamsState) Do() (processingState, error) {
 		func(msg string) (processingState, error) {
 			state, err := st.helpCommand(msg)
 			if err != nil {
-				st.logger.Debug("Failed to apply help %s", err.Error())
+				st.logger.Debugf("Failed to apply help %s", err.Error())
 			} else {
 				st.logger.Debug("Ok to apply help!")
 			}
@@ -197,7 +197,7 @@ func (st *inqueryParamsState) Do() (processingState, error) {
 					missingParams,
 				}, nil
 			}
-			st.logger.Debug("Failed to move to queryParam %s no such param", msg)
+			st.logger.Debugf("Failed to move to queryParam %s no such param", msg)
 			return nil, fmt.Errorf("No such param %s", msg)
 		},
 		func(msg string) (processingState, error) {
