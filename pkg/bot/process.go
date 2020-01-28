@@ -105,30 +105,6 @@ func parseParamRow(handProcessor core.HandProcessor, messageRow string) (string,
 	return paramName, value, nil
 }
 
-func (st *inqueryParamsState) parseAll(input string, missingParams map[string]core.ParamProcessor) error {
-	var err error
-PARSE_PARAMS:
-	for _, row := range strings.Split(input, "\n") {
-		name, val, err := parseParamRow(st.handProcessor, row)
-		if err != nil {
-			err = st.tg.Send(st.ctx, fmt.Sprintf("Failed to parse param: \"%s\" %s", name, err.Error()))
-			if err != nil {
-				return fmt.Errorf("Failed to send error message to user %w", err)
-			}
-			continue PARSE_PARAMS
-		}
-		delete(missingParams, name)
-		st.params[name] = val
-	}
-	if err != nil {
-		err = st.tg.Send(st.ctx, fmt.Sprintf("Failed to parse param: \"%s\"", err.Error()))
-		if err != nil {
-			return fmt.Errorf("Failed to send error message to user %w", err)
-		}
-	}
-	return nil
-}
-
 func (st *inqueryParamsState) helpCommand(msg string) (processingState, error) {
 
 	if !strings.HasPrefix(msg, "🤖 help") {
@@ -208,6 +184,9 @@ func (st *inqueryParamsState) Do() (processingState, error) {
 					return nil, err
 				}
 				err = st.tg.Send(st.ctx, respWriter.String())
+				if err != nil {
+					return nil, err
+				}
 				return nil, nil
 			}
 			return nil, fmt.Errorf("Not cancel command")
@@ -220,7 +199,10 @@ func (st *inqueryParamsState) Do() (processingState, error) {
 						st.params,
 					}, nil
 				}
-				st.tg.Send(st.ctx, "Not all params specified!")
+				err = st.tg.Send(st.ctx, "Not all params specified!")
+				if err != nil {
+					return nil, err
+				}
 				return nil, fmt.Errorf("Not all params specified")
 			}
 			return nil, fmt.Errorf("Not cancel command")
