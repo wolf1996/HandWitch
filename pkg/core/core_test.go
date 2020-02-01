@@ -454,8 +454,8 @@ func TestRequireMentCheck(t *testing.T) {
 	}{
 		{
 			Param: ParamInfo{
-				Name:        "QueryParam2",
-				Help:        "Help to QueryParam2",
+				Name:        "optional_query_param",
+				Help:        "",
 				Type:        StringType,
 				Destination: QueryPlaced,
 				Optional:    true,
@@ -464,8 +464,8 @@ func TestRequireMentCheck(t *testing.T) {
 		},
 		{
 			Param: ParamInfo{
-				Name:        "QueryParam2",
-				Help:        "Help to QueryParam2",
+				Name:        "required_query_param",
+				Help:        "",
 				Type:        StringType,
 				Destination: QueryPlaced,
 			},
@@ -473,8 +473,8 @@ func TestRequireMentCheck(t *testing.T) {
 		},
 		{
 			Param: ParamInfo{
-				Name:        "entity_id",
-				Help:        "Help to entity_id",
+				Name:        "required_url_placed_param",
+				Help:        "",
 				Type:        IntegerType,
 				Destination: URLPlaced,
 			},
