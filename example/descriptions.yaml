@@ -11,6 +11,7 @@ example:
       name: query_string
       destination: query
       type: string
+      optional: true
     int_param:
       help: int_param to demonstrate string params in url
       name: int_param
