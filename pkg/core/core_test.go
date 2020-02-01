@@ -508,6 +508,16 @@ func TestRequireMentCheck(t *testing.T) {
 			},
 			Required: true,
 		},
+		{
+			Param: ParamInfo{
+				Name:        "required_url_placed_param_with_ignored_optional",
+				Help:        "",
+				Type:        IntegerType,
+				Destination: URLPlaced,
+				Optional:    true,
+			},
+			Required: true,
+		},
 	}
 	for _, testCase := range testCases {
 		paramInfo := testCase.Param
