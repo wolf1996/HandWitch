@@ -341,6 +341,68 @@ Params parm a is 1`, serv.URL),
 				},
 			},
 		},
+
+		TestDescription{
+			TestInput{
+				NewDescriptionSourceFromDict(
+					URLContrainer{
+						"hand1": {
+							URLTemplate: fmt.Sprintf("%s/entity/{{.entity_id}}", serv.URL),
+							Parameters: ParamsDescription{
+								"entity_id": ParamInfo{
+									Name:        "entity_id",
+									Help:        "Help to entity_id",
+									Type:        IntegerType,
+									Destination: URLPlaced,
+								},
+								"QueryParam1": ParamInfo{
+									Name:        "QueryParam1",
+									Help:        "Help to QueryParam1",
+									Type:        IntegerType,
+									Destination: QueryPlaced,
+								},
+								"QueryParam2": ParamInfo{
+									Name:        "QueryParam2",
+									Help:        "Help to QueryParam2",
+									Type:        StringType,
+									Destination: QueryPlaced,
+									Optional:    true,
+								},
+							},
+							// TODO: сделать проверку для метаинформации
+							Body: `Value of Value is {{ .responce.value }}
+Debug url is {{ .meta.url }}
+Params parm a is {{ .meta.params.entity_id }}`,
+							URLName: "ValuableName",
+						},
+					},
+				),
+				func(rw http.ResponseWriter, req *http.Request) {
+					err := json.NewEncoder(rw).Encode(map[string]interface{}{
+						"value": "ValueForValue",
+					})
+					if err != nil {
+						panic(err.Error())
+					}
+				},
+			},
+			TestCases{
+				TestOutput{
+					HandName: "hand1",
+					Inp: map[string]interface{}{
+						"entity_id":   1,
+						"QueryParam1": 2,
+					},
+					Output: fmt.Sprintf(`Value of Value is ValueForValue
+Debug url is %s/entity/1?QueryParam1=2
+Params parm a is 1`, serv.URL),
+					Requests: []*http.Request{
+						mustBuildRequest("GET", fmt.Sprintf("%s/entity/1?QueryParam1=2", serv.URL)),
+					},
+					Err: nil,
+				},
+			},
+		},
 	}
 	for _, testCase := range testCases {
 		input := testCase.Inp
@@ -377,6 +439,54 @@ Params parm a is 1`, serv.URL),
 				t.Errorf("No error in test expected %v got %v", expect.Err, err)
 				continue KEYLOOP
 			}
+		}
+	}
+}
+
+func TestRequireMentCheck(t *testing.T) {
+	// проверяем логику вычисления опциональности параметров
+	// сейчас все url параметры - обязательные
+	// все query параметры - обязательные, но может быть проставлен параметр optional
+
+	testCases := []struct {
+		Param    ParamInfo
+		Required bool
+	}{
+		{
+			Param: ParamInfo{
+				Name:        "QueryParam2",
+				Help:        "Help to QueryParam2",
+				Type:        StringType,
+				Destination: QueryPlaced,
+				Optional:    true,
+			},
+			Required: false,
+		},
+		{
+			Param: ParamInfo{
+				Name:        "QueryParam2",
+				Help:        "Help to QueryParam2",
+				Type:        StringType,
+				Destination: QueryPlaced,
+			},
+			Required: true,
+		},
+		{
+			Param: ParamInfo{
+				Name:        "entity_id",
+				Help:        "Help to entity_id",
+				Type:        IntegerType,
+				Destination: URLPlaced,
+			},
+			Required: true,
+		},
+	}
+	for _, testCase := range testCases {
+		paramInfo := testCase.Param
+		paramProc := NewParamProcessor(paramInfo)
+		required := paramProc.IsRequired()
+		if required != testCase.Required {
+			t.Errorf("required constrained failedfor %s expected %v got %v", paramInfo.Name, testCase.Required, required)
 		}
 	}
 }

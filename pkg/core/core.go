@@ -70,6 +70,7 @@ type ParamInfo struct {
 	Name        string           `json:"name" yaml:"name"`
 	Destination ParamDestination `json:"destination" yaml:"destination"`
 	Type        ParamType        `json:"type" yaml:"type"`
+	Optional    bool             `json:"optional" yaml:"optional"`
 }
 
 //ParamsDescription Container for param

@@ -41,7 +41,8 @@ func TestDescriptionsLoader(t *testing.T) {
 						 "help":"Help to QueryParam1",
 						 "name":"QueryParam1",
 						 "destination":"query",
-						 "type":"integer"
+						 "type":"integer",
+						 "optional":true
 					  },
 					  "QueryParam2":{
 						 "help":"Help to QueryParam2",
@@ -89,6 +90,7 @@ func TestDescriptionsLoader(t *testing.T) {
 								Help:        "Help to QueryParam1",
 								Type:        IntegerType,
 								Destination: QueryPlaced,
+								Optional:    true,
 							},
 							"QueryParam2": ParamInfo{
 								Name:        "QueryParam2",
@@ -145,6 +147,7 @@ func TestDescriptionsLoaderYAML(t *testing.T) {
       name: query_param_1
       destination: query
       type: integer
+      optional: true
     query_param_2:
       help: Help to query_param_2
       name: query_param_2
@@ -180,6 +183,7 @@ func TestDescriptionsLoaderYAML(t *testing.T) {
 								Help:        "Help to query_param_1",
 								Type:        IntegerType,
 								Destination: QueryPlaced,
+								Optional:    true,
 							},
 							"query_param_2": ParamInfo{
 								Name:        "query_param_2",
