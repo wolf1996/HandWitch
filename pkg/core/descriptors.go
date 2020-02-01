@@ -212,11 +212,16 @@ func (p *ParamProcessorImp) WriteHelp(writer io.Writer) error {
 	if err != nil {
 		return fmt.Errorf("Error while Type help converting %w", err)
 	}
+	optionalString := ""
+	if !p.IsRequired() {
+		optionalString = "\t[Optional]"
+	}
 	res := fmt.Sprintf(
-		"%s(%s)\t%s\n\t%s\n",
+		"%s(%s)\t%s%s\n\t%s\n",
 		p.Name,
 		typeStr,
 		destination,
+		optionalString,
 		p.Help,
 	)
 	_, err = io.WriteString(writer, res)

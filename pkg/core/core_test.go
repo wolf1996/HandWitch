@@ -194,6 +194,26 @@ func TestHelp(t *testing.T) {
 							Body:        "",
 							URLName:     "handNoParams",
 						},
+						"handWithOptionalParam": { // Есть опциональный параметр
+							URLTemplate: "http://example.com/entity",
+							Parameters: ParamsDescription{
+								"QueryParam1": ParamInfo{
+									Name:        "QueryParam1",
+									Help:        "Help to QueryParam1",
+									Type:        IntegerType,
+									Destination: QueryPlaced,
+									Optional:    true,
+								},
+								"QueryParam2": ParamInfo{
+									Name:        "QueryParam2",
+									Help:        "Help to QueryParam2",
+									Type:        StringType,
+									Destination: QueryPlaced,
+								},
+							},
+							Body:    "",
+							URLName: "handWithOptionalParam",
+						},
 					},
 				),
 				nil,
@@ -224,6 +244,14 @@ func TestHelp(t *testing.T) {
 						"Parameters:\n" +
 						"entity_id(Integer)\tURL Param\n\tHelp to entity_id\n" +
 						"v(String)\tURL Param\n\tHelp to v\n",
+				},
+				TestOutput{
+					HandName: "handWithOptionalParam",
+					Output: "Name: handWithOptionalParam\n" +
+						"URL template: http://example.com/entity\n" +
+						"Parameters:\n" +
+						"QueryParam1(Integer)\tQuery Param\t[Optional]\n\tHelp to QueryParam1\n" +
+						"QueryParam2(String)\tQuery Param\n\tHelp to QueryParam2\n",
 				},
 			},
 		},
