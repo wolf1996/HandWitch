@@ -238,14 +238,26 @@ func (p *ParamProcessorImp) IsRequired() bool {
 	return (p.Destination == URLPlaced) || !p.Optional
 }
 
-//ParseFromString get param value from string
-func (p *ParamProcessorImp) ParseFromString(str string) (interface{}, error) {
-	switch p.Type {
+func parseString(str string) (interface{}, error) {
+	return str, nil
+}
+
+func parseInt(str string) (interface{}, error) {
+	return strconv.Atoi(str)
+}
+
+func parseValue(tp ParamType, str string) (interface{}, error) {
+	switch tp {
 	case StringType:
-		return str, nil
+		return parseString(str)
 	case IntegerType:
-		return strconv.Atoi(str)
+		return parseInt(str)
 	}
 	//TODO: make a new good errors
-	return nil, fmt.Errorf("Unknown type %s", p.Type)
+	return nil, fmt.Errorf("Unknown type %s", tp)
+}
+
+//ParseFromString get param value from string
+func (p *ParamProcessorImp) ParseFromString(str string) (interface{}, error) {
+	return parseValue(p.Type, str)
 }

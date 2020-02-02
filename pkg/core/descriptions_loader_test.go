@@ -34,7 +34,7 @@ func TestDescriptionsLoader(t *testing.T) {
 		{
 			Name: "simple result",
 			Input: `{
-				"hand1":{
+				"ValuableName":{
 				   "URL_template":"https://bash.im/entity/{entity_id}/v/{v}",
 				   "params":{
 					  "QueryParam1":{
@@ -54,7 +54,8 @@ func TestDescriptionsLoader(t *testing.T) {
 						 "help":"Help to entity_id",
 						 "name":"entity_id",
 						 "destination":"URL",
-						 "type":"integer"
+						 "type":"integer",
+						 "default_value": "1"
 					  },
 					  "v":{
 						 "help":"Help to v",
@@ -70,14 +71,15 @@ func TestDescriptionsLoader(t *testing.T) {
 			 }`,
 			Output: DescriptionParsingResults{
 				Container: URLContrainer{
-					"hand1": {
+					"ValuableName": {
 						URLTemplate: fmt.Sprintf("%s/entity/{entity_id}/v/{v}", "https://bash.im"),
 						Parameters: ParamsDescription{
 							"entity_id": ParamInfo{
-								Name:        "entity_id",
-								Help:        "Help to entity_id",
-								Type:        IntegerType,
-								Destination: URLPlaced,
+								Name:         "entity_id",
+								Help:         "Help to entity_id",
+								Type:         IntegerType,
+								Destination:  URLPlaced,
+								DefaultValue: "1",
 							},
 							"v": ParamInfo{
 								Name:        "v",
@@ -134,7 +136,7 @@ func TestDescriptionsLoaderYAML(t *testing.T) {
 	}{
 		{
 			Name: "simple result",
-			Input: `hand1:
+			Input: `ValuableName:
   url_template: https://bash.im/entity/{entity_id}/v/{v}
   parameters:
     entity_id:
@@ -142,6 +144,7 @@ func TestDescriptionsLoaderYAML(t *testing.T) {
       name: entity_id
       destination: URL
       type: integer
+      default_value: 1
     query_param_1:
       help: Help to query_param_1
       name: query_param_1
@@ -167,10 +170,11 @@ func TestDescriptionsLoaderYAML(t *testing.T) {
 						URLTemplate: fmt.Sprintf("%s/entity/{entity_id}/v/{v}", "https://bash.im"),
 						Parameters: ParamsDescription{
 							"entity_id": ParamInfo{
-								Name:        "entity_id",
-								Help:        "Help to entity_id",
-								Type:        IntegerType,
-								Destination: URLPlaced,
+								Name:         "entity_id",
+								Help:         "Help to entity_id",
+								Type:         IntegerType,
+								Destination:  URLPlaced,
+								DefaultValue: "1",
 							},
 							"v": ParamInfo{
 								Name:        "v",
@@ -199,23 +203,122 @@ func TestDescriptionsLoaderYAML(t *testing.T) {
 				Err: nil,
 			},
 		},
+		{
+			Name: "simple result",
+			Input: `ValuableName:
+  url_template: https://bash.im/entity/{entity_id}/v/{v}
+  parameters:
+    entity_id:
+      help: Help to entity_id
+      name: entity_id
+      destination: URL
+      type: integer
+      default_value: a
+    query_param_1:
+      help: Help to query_param_1
+      name: query_param_1
+      destination: query
+      type: integer
+      optional: true
+  body: Value of Value is {{ .value }}
+  url_name: ValuableName
+  help: ""`,
+			Output: DescriptionParsingResults{
+				Container: URLContrainer{},
+				Err: &ValidationError{
+					Field: "",
+					WrappedError: []error{
+						&ValidationError{
+							Field: "ValuableName",
+							WrappedError: []error{
+								&ValidationError{
+									Field: "entity_id",
+									WrappedError: []error{
+										fmt.Errorf("Error on default value strconv.Atoi: parsing \"a\": invalid syntax"),
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	safeErrorPrint := func(errOut error) string {
+		if errOut == nil {
+			return "nil"
+		}
+		return errOut.Error()
 	}
 	for _, testCase := range testCases {
 		reader := strings.NewReader(testCase.Input)
 		result, errResult := GetDescriptionSourceFromYAML(reader)
 		if (errResult != nil) != (testCase.Output.Err != nil) {
-			safeErrorPrint := func(errOut error) string {
-				if errOut == nil {
-					return "nil"
-				}
-				return errOut.Error()
-			}
 			t.Errorf("%s: Not equal errors, got %s, expected %s", testCase.Name, safeErrorPrint(errResult), safeErrorPrint(testCase.Output.Err))
 			t.FailNow()
+		}
+		if (errResult != nil) && (testCase.Output.Err != nil) {
+			// TODO: возможно придумать лучший способ сравнения
+			if errResult.Error() != testCase.Output.Err.Error() {
+				t.Errorf("%s: Not equal errors, got %s, expected %s", testCase.Name, safeErrorPrint(errResult), safeErrorPrint(testCase.Output.Err))
+			}
 		}
 
 		if ok, msg := cmpHandlers(testCase.Output.Container, result); !ok {
 			t.Errorf("%s: error on results comparision %s", testCase.Name, msg)
+		}
+	}
+}
+
+func TestParamsValidation(t *testing.T) {
+	// проверяем проверку параметров
+	testCases := []struct {
+		Param  ParamInfo
+		Errors string
+	}{
+		{
+			Param: ParamInfo{
+				Name:        "good_param",
+				Help:        "",
+				Type:        StringType,
+				Destination: QueryPlaced,
+				Optional:    true,
+			},
+			Errors: "",
+		},
+		{
+			Param: ParamInfo{
+				Name:        "optional_url_placed",
+				Help:        "",
+				Type:        StringType,
+				Destination: URLPlaced,
+				Optional:    true,
+			},
+			Errors: "Error(s) on processing entity optional_url_placed: UrlPlaced param can't be marked as optional\n",
+		},
+		{
+			Param: ParamInfo{
+				Name:         "invalid_value",
+				Help:         "",
+				Type:         IntegerType,
+				Destination:  URLPlaced,
+				DefaultValue: "a",
+			},
+			Errors: "Error(s) on processing entity invalid_value: Error on default value strconv.Atoi: parsing \"a\": invalid syntax\n",
+		},
+	}
+	for _, testCase := range testCases {
+		paramInfo := testCase.Param
+		errs := validateParam(&paramInfo)
+		err := newValidationError(paramInfo.Name, errs)
+		if err == nil {
+			if testCase.Errors == "" {
+				continue
+			}
+			t.Errorf("required constrained failedfor %s expected %v got nil", paramInfo.Name, testCase.Errors)
+		}
+		if err.Error() != testCase.Errors {
+			t.Errorf("required constrained failedfor %s expected %v got %v", paramInfo.Name, testCase.Errors, err.Error())
 		}
 	}
 }
