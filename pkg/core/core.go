@@ -66,11 +66,12 @@ func (tp ParamType) ToString() (string, error) {
 
 //ParamInfo Config parameter description
 type ParamInfo struct {
-	Help        string           `json:"help" yaml:"help"`
-	Name        string           `json:"name" yaml:"name"`
-	Destination ParamDestination `json:"destination" yaml:"destination"`
-	Type        ParamType        `json:"type" yaml:"type"`
-	Optional    bool             `json:"optional" yaml:"optional"`
+	Help         string           `json:"help" yaml:"help"`
+	Name         string           `json:"name" yaml:"name"`
+	Destination  ParamDestination `json:"destination" yaml:"destination"`
+	Type         ParamType        `json:"type" yaml:"type"`
+	Optional     bool             `json:"optional" yaml:"optional"`
+	DefaultValue string           `json:"default_value" yaml:"default_value"`
 }
 
 //ParamsDescription Container for param
