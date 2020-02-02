@@ -166,7 +166,7 @@ func TestDescriptionsLoaderYAML(t *testing.T) {
   help: ""`,
 			Output: DescriptionParsingResults{
 				Container: URLContrainer{
-					"hand1": {
+					"ValuableName": {
 						URLTemplate: fmt.Sprintf("%s/entity/{entity_id}/v/{v}", "https://bash.im"),
 						Parameters: ParamsDescription{
 							"entity_id": ParamInfo{

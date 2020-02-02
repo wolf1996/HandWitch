@@ -235,7 +235,7 @@ func (p *ParamProcessorImp) GetInfo() ParamInfo {
 
 //IsRequired check if parameter is required
 func (p *ParamProcessorImp) IsRequired() bool {
-	return (p.Destination == URLPlaced) || !p.Optional
+	return (p.Destination == URLPlaced && p.DefaultValue == "") || (p.Destination == QueryPlaced && (!p.Optional && p.DefaultValue == ""))
 }
 
 func parseString(str string) (interface{}, error) {
