@@ -307,6 +307,7 @@ func TestParamsValidation(t *testing.T) {
 			Errors: "Error(s) on processing entity invalid_value: Error on default value strconv.Atoi: parsing \"a\": invalid syntax\n",
 		},
 	}
+
 	for _, testCase := range testCases {
 		paramInfo := testCase.Param
 		errs := validateParam(&paramInfo)

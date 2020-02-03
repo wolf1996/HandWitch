@@ -383,6 +383,60 @@ Params parm a is 1`, serv.URL),
 									Type:        IntegerType,
 									Destination: URLPlaced,
 								},
+								"QueryParam2": ParamInfo{
+									Name:         "QueryParam2",
+									Help:         "Help to QueryParam2",
+									Type:         StringType,
+									Destination:  QueryPlaced,
+									DefaultValue: "queryparam2val",
+								},
+							},
+							// TODO: сделать проверку для метаинформации
+							Body: `Value of Value is {{ .responce.value }}
+Debug url is {{ .meta.url }}
+Params parm a is {{ .meta.params.entity_id }}`,
+							URLName: "ValuableName",
+						},
+					},
+				),
+				func(rw http.ResponseWriter, req *http.Request) {
+					err := json.NewEncoder(rw).Encode(map[string]interface{}{
+						"value": "ValueForValue",
+					})
+					if err != nil {
+						panic(err.Error())
+					}
+				},
+			},
+			TestCases{
+				TestOutput{
+					HandName: "hand1",
+					Inp: map[string]interface{}{
+						"entity_id": 1,
+					},
+					Output: fmt.Sprintf(`Value of Value is ValueForValue
+Debug url is %s/entity/1?QueryParam2=queryparam2val
+Params parm a is 1`, serv.URL),
+					Requests: []*http.Request{
+						mustBuildRequest("GET", fmt.Sprintf("%s/entity/1?QueryParam2=queryparam2val", serv.URL)),
+					},
+					Err: nil,
+				},
+			},
+		},
+		TestDescription{
+			TestInput{
+				NewDescriptionSourceFromDict(
+					URLContrainer{
+						"hand1": {
+							URLTemplate: fmt.Sprintf("%s/entity/{{.entity_id}}", serv.URL),
+							Parameters: ParamsDescription{
+								"entity_id": ParamInfo{
+									Name:        "entity_id",
+									Help:        "Help to entity_id",
+									Type:        IntegerType,
+									Destination: URLPlaced,
+								},
 								"QueryParam1": ParamInfo{
 									Name:        "QueryParam1",
 									Help:        "Help to QueryParam1",

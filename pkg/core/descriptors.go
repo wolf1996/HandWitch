@@ -88,9 +88,21 @@ func (processor *HandProcessorImp) addQueryParams(req *http.Request, params map[
 	req.URL.RawQuery = qry.Encode()
 }
 
+func (processor *HandProcessorImp) mergeWithDefault(params map[string]interface{}, logger *log.Entry) {
+	defaultValues := processor.GetParamsDefaultValues()
+	for paramName, defaultValue := range defaultValues {
+		_, hasValue := params[paramName]
+		if !hasValue {
+			params[paramName] = defaultValue
+			logger.Debugf("using default value %v for param %s", defaultValue, paramName)
+		}
+	}
+}
+
 //Process load data from hand url and
 //execute template with it
 func (processor *HandProcessorImp) Process(ctx context.Context, writer io.Writer, params map[string]interface{}, logger *log.Entry) error {
+	processor.mergeWithDefault(params, logger)
 	url := new(bytes.Buffer)
 	tmp, err := template.New(processor.URLName).Parse(processor.URLTemplate)
 	if err != nil {
@@ -200,6 +212,17 @@ func (processor *HandProcessorImp) GetParams() (map[string]ParamProcessor, error
 		result[paramName] = param
 	}
 	return result, nil
+}
+
+//GetParamsDefaultValues get all default parameters values
+func (processor *HandProcessorImp) GetParamsDefaultValues() map[string]interface{} {
+	result := make(map[string]interface{})
+	for paramName, param := range processor.Parameters {
+		if param.DefaultValue != nil {
+			result[paramName] = param.DefaultValue
+		}
+	}
+	return result
 }
 
 //ParamProcessorImp implemet
