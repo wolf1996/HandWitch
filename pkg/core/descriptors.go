@@ -96,16 +96,19 @@ func (processor *HandProcessorImp) Process(ctx context.Context, writer io.Writer
 	if err != nil {
 		return fmt.Errorf("Failed to build URL template %w", err)
 	}
+
 	err = tmp.Execute(url, params)
 	if err != nil {
 		return fmt.Errorf("Failed to build URL %w", err)
 	}
 	logger.Debugf("Got URL %s", url.String())
+
 	req, err := http.NewRequestWithContext(ctx, "GET", url.String(), nil)
 	if err != nil {
 		return fmt.Errorf("Failed to build request %w", err)
 	}
 	processor.addQueryParams(req, params)
+
 	logger.Debugf("Got request %s", func() string {
 		bytes, err := httputil.DumpRequest(req, true)
 		if err != nil {
@@ -113,10 +116,12 @@ func (processor *HandProcessorImp) Process(ctx context.Context, writer io.Writer
 		}
 		return string(bytes)
 	}())
+
 	responce, err := processor.client.Do(req)
 	if err != nil {
 		return fmt.Errorf("Failed to read result %w", err)
 	}
+
 	defer responce.Body.Close()
 	logger.Debugf("Got responce %s", func() string {
 		bytes, err := httputil.DumpResponse(responce, true)
@@ -125,15 +130,18 @@ func (processor *HandProcessorImp) Process(ctx context.Context, writer io.Writer
 		}
 		return string(bytes)
 	}())
+
 	responceData := make(map[string]interface{})
 	err = json.NewDecoder(responce.Body).Decode(&responceData)
 	if err != nil {
 		return fmt.Errorf("Failed to decode json result %w", err)
 	}
+
 	template, err := processor.compileTemplate(processor.URLRecord, params)
 	if err != nil {
 		return fmt.Errorf("Failed to build request %w", err)
 	}
+
 	templateData := map[string]interface{}{
 		"responce": responceData,
 		"meta": map[string]interface{}{
@@ -141,10 +149,12 @@ func (processor *HandProcessorImp) Process(ctx context.Context, writer io.Writer
 			"params": params,
 		},
 	}
+
 	err = template.Lookup(processor.URLRecord.URLName).Execute(writer, templateData)
 	if err != nil {
 		return fmt.Errorf("Failed to execute %w", err)
 	}
+
 	return nil
 }
 
@@ -235,7 +245,7 @@ func (p *ParamProcessorImp) GetInfo() ParamInfo {
 
 //IsRequired check if parameter is required
 func (p *ParamProcessorImp) IsRequired() bool {
-	return (p.Destination == URLPlaced && p.DefaultValue == "") || (p.Destination == QueryPlaced && (!p.Optional && p.DefaultValue == ""))
+	return (p.Destination == URLPlaced && p.DefaultValue == nil) || (p.Destination == QueryPlaced && (!p.Optional && p.DefaultValue == nil))
 }
 
 func parseString(str string) (interface{}, error) {

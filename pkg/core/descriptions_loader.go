@@ -47,13 +47,20 @@ func newValidationError(field string, wrappedError []error) error {
 
 func validateParam(paramInfo *ParamInfo) []error {
 	errs := make([]error, 0)
-	if (paramInfo.Destination == URLPlaced) && paramInfo.Optional && paramInfo.DefaultValue == "" {
+	if (paramInfo.Destination == URLPlaced) && paramInfo.Optional && paramInfo.DefaultValue == nil {
 		errs = append(errs, errors.New("UrlPlaced param can't be marked as optional"))
 	}
-	if paramInfo.DefaultValue != "" {
-		_, err := parseValue(paramInfo.Type, paramInfo.DefaultValue)
-		if err != nil {
-			errs = append(errs, fmt.Errorf("Error on default value %w", err))
+	if paramInfo.DefaultValue != nil {
+		str, ok := paramInfo.DefaultValue.(string)
+		if ok {
+			val, err := parseValue(paramInfo.Type, str)
+			if err != nil {
+				errs = append(errs, fmt.Errorf("Error on default value %w", err))
+			} else {
+				paramInfo.DefaultValue = val
+			}
+		} else {
+			errs = append(errs, fmt.Errorf("Error on default value: failed to get default value as a string"))
 		}
 	}
 	return errs

@@ -144,7 +144,7 @@ func TestDescriptionsLoaderYAML(t *testing.T) {
       name: entity_id
       destination: URL
       type: integer
-      default_value: 1
+      default_value: "1"
     query_param_1:
       help: Help to query_param_1
       name: query_param_1
