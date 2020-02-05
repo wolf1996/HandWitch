@@ -245,20 +245,37 @@ func (p *ParamProcessorImp) WriteHelp(writer io.Writer) error {
 	if err != nil {
 		return fmt.Errorf("Error while Type help converting %w", err)
 	}
-	optionalString := ""
-	if !p.IsRequired() {
-		optionalString = "\t[Optional]"
+
+	_, err = io.WriteString(writer, p.Name)
+	if err != nil {
+		return fmt.Errorf("Failed to write help for %s: %w", p.Name, err)
 	}
-	res := fmt.Sprintf(
-		"%s(%s)\t%s%s\n\t%s\n",
-		p.Name,
-		typeStr,
-		destination,
-		optionalString,
-		p.Help,
-	)
-	_, err = io.WriteString(writer, res)
-	return err
+	_, err = io.WriteString(writer, fmt.Sprintf("(%s)", typeStr))
+	if err != nil {
+		return fmt.Errorf("Failed to write help for %s: %w", p.Name, err)
+	}
+	_, err = io.WriteString(writer, "\t"+destination)
+	if err != nil {
+		return fmt.Errorf("Failed to write help for %s: %w", p.Name, err)
+	}
+	if !p.IsRequired() {
+		_, err = io.WriteString(writer, "\t[Optional]")
+		if err != nil {
+			return fmt.Errorf("Failed to write help for %s: %w", p.Name, err)
+		}
+	}
+	io.WriteString(writer, "\n")
+	if p.DefaultValue != nil {
+		_, err = io.WriteString(writer, fmt.Sprintf("Default: %v\n", p.DefaultValue))
+		if err != nil {
+			return fmt.Errorf("Failed to write help for %s: %w", p.Name, err)
+		}
+	}
+	_, err = io.WriteString(writer, "\t"+p.Help+"\n")
+	if err != nil {
+		return fmt.Errorf("Failed to write help for %s: %w", p.Name, err)
+	}
+	return nil
 }
 
 //GetInfo get raw info
