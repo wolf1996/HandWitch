@@ -62,6 +62,7 @@ func (processor *HandProcessorImp) WriteHelp(writer io.Writer) error {
 	}
 	sort.Strings(keys)
 	for _, key := range keys {
+		io.WriteString(writer, "\n")
 		proc, _ := processor.GetParam(key)
 		if err != nil {
 			return fmt.Errorf("Error while writing get parameter help for key %s: %w", key, err)

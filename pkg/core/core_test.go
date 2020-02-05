@@ -238,41 +238,41 @@ func TestHelp(t *testing.T) {
 					Output: "Name: hand1\n" +
 						"URL template: http://example.com/entity/{entity_id}/v/{v}\n" +
 						"Parameters:\n" +
-						"QueryParam1(Integer)\tQuery Param\n\tHelp to QueryParam1\n" +
-						"QueryParam2(String)\tQuery Param\n\tHelp to QueryParam2\n" +
-						"entity_id(Integer)\tURL Param\n\tHelp to entity_id\n" +
-						"v(String)\tURL Param\n\tHelp to v\n",
+						"\nQueryParam1(Integer)\tQuery Param\n\tHelp to QueryParam1\n" +
+						"\nQueryParam2(String)\tQuery Param\n\tHelp to QueryParam2\n" +
+						"\nentity_id(Integer)\tURL Param\n\tHelp to entity_id\n" +
+						"\nv(String)\tURL Param\n\tHelp to v\n",
 				},
 				TestOutput{
 					HandName: "handNoURLParams",
 					Output: "Name: handNoURLParams\n" +
 						"URL template: http://example.com/entity\n" +
 						"Parameters:\n" +
-						"QueryParam1(Integer)\tQuery Param\n\tHelp to QueryParam1\n" +
-						"QueryParam2(String)\tQuery Param\n\tHelp to QueryParam2\n",
+						"\nQueryParam1(Integer)\tQuery Param\n\tHelp to QueryParam1\n" +
+						"\nQueryParam2(String)\tQuery Param\n\tHelp to QueryParam2\n",
 				},
 				TestOutput{
 					HandName: "handNoQueryParams",
 					Output: "Name: handNoQueryParams\n" +
 						"URL template: http://example.com/entity/{entity_id}/v/{v}\n" +
 						"Parameters:\n" +
-						"entity_id(Integer)\tURL Param\n\tHelp to entity_id\n" +
-						"v(String)\tURL Param\n\tHelp to v\n",
+						"\nentity_id(Integer)\tURL Param\n\tHelp to entity_id\n" +
+						"\nv(String)\tURL Param\n\tHelp to v\n",
 				},
 				TestOutput{
 					HandName: "handWithOptionalParam",
 					Output: "Name: handWithOptionalParam\n" +
 						"URL template: http://example.com/entity\n" +
 						"Parameters:\n" +
-						"QueryParam1(Integer)\tQuery Param\t[Optional]\n\tHelp to QueryParam1\n" +
-						"QueryParam2(String)\tQuery Param\n\tHelp to QueryParam2\n",
+						"\nQueryParam1(Integer)\tQuery Param\t[Optional]\n\tHelp to QueryParam1\n" +
+						"\nQueryParam2(String)\tQuery Param\n\tHelp to QueryParam2\n",
 				},
 				TestOutput{
 					HandName: "handWithDefaultValue",
 					Output: "Name: handWithDefaultValue\n" +
 						"URL template: http://example.com/entity\n" +
 						"Parameters:\n" +
-						"QueryParam1(Integer)\tQuery Param\t[Optional]\n\tDefault: 1\n\tHelp to QueryParam1\n",
+						"\nQueryParam1(Integer)\tQuery Param\t[Optional]\n\tDefault: 1\n\tHelp to QueryParam1\n",
 				},
 			},
 		},
