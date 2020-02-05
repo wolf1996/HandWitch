@@ -272,7 +272,7 @@ func TestHelp(t *testing.T) {
 					Output: "Name: handWithDefaultValue\n" +
 						"URL template: http://example.com/entity\n" +
 						"Parameters:\n" +
-						"QueryParam1(Integer)\tQuery Param\t[Optional]\nDefault: 1\n\tHelp to QueryParam1\n",
+						"QueryParam1(Integer)\tQuery Param\t[Optional]\n\tDefault: 1\n\tHelp to QueryParam1\n",
 				},
 			},
 		},

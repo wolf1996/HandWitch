@@ -266,7 +266,7 @@ func (p *ParamProcessorImp) WriteHelp(writer io.Writer) error {
 	}
 	io.WriteString(writer, "\n")
 	if p.DefaultValue != nil {
-		_, err = io.WriteString(writer, fmt.Sprintf("Default: %v\n", p.DefaultValue))
+		_, err = io.WriteString(writer, fmt.Sprintf("\tDefault: %v\n", p.DefaultValue))
 		if err != nil {
 			return fmt.Errorf("Failed to write help for %s: %w", p.Name, err)
 		}
