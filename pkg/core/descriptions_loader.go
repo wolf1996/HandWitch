@@ -28,6 +28,7 @@ func (val *ValidationError) Error() string {
 	return fmt.Sprintf("Error(s) on processing entity %s: %s", val.Field, builder.String())
 }
 
+// Unwrap default unwrap
 func (val *ValidationError) Unwrap() error {
 	if len(val.WrappedError) == 0 {
 		panic(fmt.Sprintf("Empty error unwrap requesting! %v", val))
