@@ -174,7 +174,7 @@ func TestDescriptionsLoaderYAML(t *testing.T) {
 								Help:         "Help to entity_id",
 								Type:         IntegerType,
 								Destination:  URLPlaced,
-								DefaultValue: "1",
+								DefaultValue: 1,
 							},
 							"v": ParamInfo{
 								Name:        "v",
@@ -204,7 +204,7 @@ func TestDescriptionsLoaderYAML(t *testing.T) {
 			},
 		},
 		{
-			Name: "simple result",
+			Name: "bad default value",
 			Input: `ValuableName:
   url_template: https://bash.im/entity/{entity_id}/v/{v}
   parameters:

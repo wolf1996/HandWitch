@@ -279,6 +279,21 @@ func parseInt(str string) (interface{}, error) {
 	return strconv.Atoi(str)
 }
 
+func parseFromInterface(tp ParamType, val interface{}) (interface{}, error) {
+	switch valType := val.(type) {
+	case int:
+		{
+			return val, nil
+		}
+	case string:
+		{
+			return parseValue(tp, val.(string))
+		}
+	default:
+		return nil, fmt.Errorf("failed to get %v from param %v with type %v", tp, val, valType)
+	}
+}
+
 func parseValue(tp ParamType, str string) (interface{}, error) {
 	switch tp {
 	case StringType:

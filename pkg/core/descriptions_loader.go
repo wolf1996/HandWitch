@@ -52,16 +52,11 @@ func validateParam(paramInfo *ParamInfo) []error {
 		errs = append(errs, errors.New("UrlPlaced param can't be marked as optional"))
 	}
 	if paramInfo.DefaultValue != nil {
-		str, ok := paramInfo.DefaultValue.(string)
-		if ok {
-			val, err := parseValue(paramInfo.Type, str)
-			if err != nil {
-				errs = append(errs, fmt.Errorf("Error on default value %w", err))
-			} else {
-				paramInfo.DefaultValue = val
-			}
+		val, err := parseFromInterface(paramInfo.Type, paramInfo.DefaultValue)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("Error on default value %w", err))
 		} else {
-			errs = append(errs, fmt.Errorf("Error on default value: failed to get default value as a string"))
+			paramInfo.DefaultValue = val
 		}
 	}
 	return errs
