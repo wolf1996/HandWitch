@@ -22,6 +22,7 @@ example:
       name: string_param
       destination: URL
       type: string
+      default_value: default_value_str
   body: "
   <b>URL requested</b> :\n {{.meta.url}}
   \n
