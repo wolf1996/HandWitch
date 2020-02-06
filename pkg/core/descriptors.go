@@ -62,7 +62,10 @@ func (processor *HandProcessorImp) WriteHelp(writer io.Writer) error {
 	}
 	sort.Strings(keys)
 	for _, key := range keys {
-		io.WriteString(writer, "\n")
+		_, err = io.WriteString(writer, "\n")
+		if err != nil {
+			return fmt.Errorf("Error while writing \\n %s: %w", key, err)
+		}
 		proc, _ := processor.GetParam(key)
 		if err != nil {
 			return fmt.Errorf("Error while writing get parameter help for key %s: %w", key, err)
@@ -265,7 +268,10 @@ func (p *ParamProcessorImp) WriteHelp(writer io.Writer) error {
 			return fmt.Errorf("Failed to write help for %s: %w", p.Name, err)
 		}
 	}
-	io.WriteString(writer, "\n")
+	_, err = io.WriteString(writer, "\n")
+	if err != nil {
+		return fmt.Errorf("Failed to write \n 2 help for %s: %w", p.Name, err)
+	}
 	if p.DefaultValue != nil {
 		_, err = io.WriteString(writer, fmt.Sprintf("\tDefault: %v\n", p.DefaultValue))
 		if err != nil {
