@@ -71,7 +71,7 @@ type ParamInfo struct {
 	Destination  ParamDestination `json:"destination" yaml:"destination"`
 	Type         ParamType        `json:"type" yaml:"type"`
 	Optional     bool             `json:"optional" yaml:"optional"`
-	DefaultValue interface{}      `json:"default_value,string" yaml:"default_value"`
+	DefaultValue interface{}      `json:"default_value" yaml:"default_value"`
 }
 
 //ParamsDescription Container for param
