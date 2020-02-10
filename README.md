@@ -1,12 +1,33 @@
 # HandWitch
 ![](https://github.com/wolf1996/HandWitch/workflows/ci/badge.svg)
 
-Бот для работы с http запросами через интерфейс телеграмма.
+Бот для запросов к json api через интерфейс телеграм и формирования ответа в человекочитаемом виде.
 
 ## Запуск
 Для запуска бота используйте команду serve.
 ```bash
 ./HandWitch serve --token=your_telegram_token --config=config.json
+```
+Более подробную справку по cli можно получить использовав флаг *--help* для каждой команды.
+
+```
+HandWitch --help
+handwitch helps you to handle http request without frontend
+
+Usage:
+  handwitch [command]
+
+Available Commands:
+  help        Help about any command
+  serve       Starts bot
+
+Flags:
+      --config string   configuration path file
+  -h, --help            help for handwitch
+      --log string      log level [info|warn|debug] (default "info")
+      --path string     descriptions file path
+
+Use "handwitch [command] --help" for more information about a command.
 ```
 
 ## Конфигурация 
@@ -15,7 +36,7 @@
 {
 	"log_level": "Debug", // debug info warning debug panic fatal
 	"path": "./descriptions.yaml", // путь до файла с описанием http запросов
-	"telegram": { // описание параметров связанных с телеграмм
+	"telegram": { // описание параметров связанных с телеграм
 		"white_list": "./whitelist.json", // список логинов пользователей с которыми можно общаться 
 		"formatting": "HTML" // разметка 
 	}
@@ -24,7 +45,11 @@
 
 Список доступных значений для *log_level* подробней и с описаниями можно посмотреть у [logrus](https://github.com/sirupsen/logrus). 
 
-описание запросов будет приведено ниже.
+*formating* - для ответов пользователю можно использовать форматирование текста в формате Markdown ([есть проблема](https://github.com/wolf1996/HandWitch/issues/12)) и HTML. Подробнее про формат можно прочитать в [документации telegram](https://core.telegram.org/bots/api#formatting-options)
+
+
+*path* - содержит путь до файла, в котором хранится описание запросов формат описания будет приведён ниже.
+
 
 *white_list* - описание списка пользователей с которыми боту разрешено общаться
 
@@ -33,8 +58,6 @@
     "users": ["YourTelegramName"]
 }
 ```
-
-*formating* - для ответов пользователю можно использовать форматирование текста в формате Markdown [есть проблема](https://github.com/wolf1996/HandWitch/issues/12) и HTML. Подробнее про формат можно прочитать в [документации telegramm](https://core.telegram.org/bots/api#formatting-options)
 
 ## Описание запросов
 
@@ -93,12 +116,28 @@ url_template: http://localhost:8080/{{.string_param}}/{{.int_param}}
 ```
 где example - имя запроса из описания. 
 
-После запуска исполнения запроса будет предложено выбрать различные параметры для ввода. По каждому параметру можно получить справку. 
+После запуска исполнения запроса будет предложено выбрать различные параметры для ввода из столбца кнопок слева. По каждому параметру можно получить справку нажав соответветствующую кнопку в правом столбце.
 ![Первая клавиатура](https://raw.githubusercontent.com/wolf1996/HandWitch/media/pictures/first_keyboard.png)
+
+Справка для каждого параметра будет выглядеть так:
+![Справка по параметру](https://raw.githubusercontent.com/wolf1996/HandWitch/media/pictures/param_help.png)
+
 Для каждого запроса можно получить получить полную справку, или отменить запрос.
+
 ![Управление запросом](https://raw.githubusercontent.com/wolf1996/HandWitch/media/pictures/help_keyboard.png)
-Если для запроса не заданы нужные параметры кнопка исполнения запроса бдует скрыта. Пропущенные параметры, необходимые для исполнения запроса будут перечислены как *Missed Params*. После того как значения для этих параметров будут установлены, запрос может быть отправлен на исполнение.
+
+
+Справка по запросу включает в себя краткое описание запроса и справку по каждому из его параметров.
+
+![Справка по запросу](https://raw.githubusercontent.com/wolf1996/HandWitch/media/pictures/request_help.png)
+
+Если для запроса не заданы нужные параметры кнопка исполнения запроса бдует скрыта. Пропущенные параметры, необходимые для исполнения запроса будут перечислены как *Missed Params* в сообщении о статусе текущего запроса.
+
+![Статус текущего запроса ](https://raw.githubusercontent.com/wolf1996/HandWitch/media/pictures/state_message.png)
+
+ После того как значения для этих параметров будут установлены, запрос может быть отправлен на исполнение.
 ![Исполнение запроса](https://raw.githubusercontent.com/wolf1996/HandWitch/media/pictures/ok_params.png)
+
 В результате ответ сервера в json будет форматирован всоответствии с шаблоном. (В данном случае в синтаксисе HTML)
 ```HTML
   <b>URL requested</b> :\n {{.meta.url}}
