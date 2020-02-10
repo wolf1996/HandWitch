@@ -32,7 +32,7 @@ Use "handwitch [command] --help" for more information about a command.
 
 ## Конфигурация 
 
-``` json
+```
 {
 	"log_level": "Debug", // debug info warning debug panic fatal
 	"path": "./descriptions.yaml", // путь до файла с описанием http запросов
