@@ -85,9 +85,28 @@ url_template: http://localhost:8080/{{.string_param}}/{{.int_param}}
 ## Пользовательская функциональность 
 
 ### Начало работы 
+Рассмотрим запросы описанные в примере программы. Все конфигурации можно посмотреть в [примере](https://github.com/wolf1996/HandWitch/tree/master/example).
+
 Для начала работы с запросом надо ввести команду.
 ```
 /process example
 ```
 где example - имя запроса из описания. 
 
+После запуска исполнения запроса будет предложено выбрать различные параметры для ввода. По каждому параметру можно получить справку. 
+![Первая клавиатура](https://raw.githubusercontent.com/wolf1996/HandWitch/media/pictures/first_keyboard.png)
+Для каждого запроса можно получить получить полную справку, или отменить запрос.
+![Управление запросом](https://raw.githubusercontent.com/wolf1996/HandWitch/media/pictures/help_keyboard.png)
+Если для запроса не заданы нужные параметры кнопка исполнения запроса бдует скрыта. Пропущенные параметры, необходимые для исполнения запроса будут перечислены как *Missed Params*. После того как значения для этих параметров будут установлены, запрос может быть отправлен на исполнение.
+![Исполнение запроса](https://raw.githubusercontent.com/wolf1996/HandWitch/media/pictures/ok_params.png)
+В результате ответ сервера в json будет форматирован всоответствии с шаблоном. (В данном случае в синтаксисе HTML)
+```HTML
+  <b>URL requested</b> :\n {{.meta.url}}
+  \n
+  <b>params</b> :\n
+  {{ range $key, $value := .meta.params }} <b>{{ $key }}</b> : {{ $value }} \n {{ end }}
+  \n
+  <b>responce</b> :\n
+  {{ range $key, $value := .responce }} <b>{{ $key }}</b> : {{ $value }} \n {{ end }}
+```
+![Результат](https://raw.githubusercontent.com/wolf1996/HandWitch/media/pictures/responce.png)
