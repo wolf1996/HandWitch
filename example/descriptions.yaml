@@ -2,23 +2,23 @@ example:
   url_template: http://localhost:8080/{{.string_param}}/{{.int_param}}
   parameters:
     query_int:
-      help: query_int to demonstrate int param in query
+      help: param to demonstrate <b>int</b> param in query
       name: query_int
       destination: query
       type: integer
     query_string:
-      help: query_string to demonstrate string param in query
+      help: param to demonstrate string <b>param</b> in query
       name: query_string
       destination: query
       type: string
       optional: true
     int_param:
-      help: int_param to demonstrate string params in url
+      help: param to demonstrate <b>integer</b> params in <b>url</b>
       name: int_param
       destination: URL
       type: integer
     string_param:
-      help: string_param to demonstrate integer param in url
+      help: param to demonstrate <b>string</b> param in <b>url</b>
       name: string_param
       destination: URL
       type: string
