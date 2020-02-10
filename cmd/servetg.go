@@ -103,8 +103,8 @@ func exec(cmd *cobra.Command, args []string) error {
 	whitelist := viper.GetString("telegram.white_list")
 	logger.Infof("Used whitelist: %s", whitelist)
 
-	formating := viper.GetString("telegram.formating")
-	logger.Infof("Used formating: %s", formating)
+	formating := viper.GetString("telegram.formatting")
+	logger.Infof("Used formatting: %s", formating)
 
 	telegramProxy := viper.GetString("telegram.proxy")
 	logger.Infof("Used proxy for telegram client: %s", telegramProxy)
@@ -158,7 +158,7 @@ func registerServeBot(parentCmd *cobra.Command) (*cobra.Command, error) {
 	}
 	comand.PersistentFlags().String("token", "info", "log level [info|warn|debug]")
 	comand.PersistentFlags().String("whitelist", "", "configuration path file")
-	comand.PersistentFlags().String("formating", "", "descriptions file path")
+	comand.PersistentFlags().String("formatting", "", "formatting mode of telegramm message")
 	comand.PersistentFlags().String("tgproxy", "", "proxy to telegram client")
 
 	err := comand.MarkPersistentFlagRequired("token")

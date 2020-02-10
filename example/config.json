@@ -3,6 +3,6 @@
 	"path": "./descriptions.yaml",
 	"telegram": {
 		"white_list": "./whitelist.json",
-		"formating": "HTML"
+		"formatting": "HTML"
 	}
 }
