@@ -31,6 +31,11 @@ type TestOutputParamHelp struct {
 	Err      error
 }
 
+type TestBrief struct {
+	HandName string
+	Brief    string
+}
+
 type TestCases = []interface{}
 
 type TestDescription struct {
@@ -39,6 +44,105 @@ type TestDescription struct {
 }
 
 type TestDescriptions = []TestDescription
+
+func TestHandBrief(t *testing.T) {
+	testCases := TestDescriptions{
+		TestDescription{
+			TestInput{
+				NewDescriptionSourceFromDict(URLContrainer{
+					"hand1": {
+						URLTemplate: "",
+						Parameters: ParamsDescription{
+							"Name1": ParamInfo{
+								Name:        "Name1",
+								Help:        "Help to Name1",
+								Type:        IntegerType,
+								Destination: QueryPlaced,
+							},
+						},
+						Body:    "",
+						URLName: "hand1",
+						Help:    "brief for hand 1",
+					},
+					"hand2": {
+						URLTemplate: "",
+						Parameters: ParamsDescription{
+							"Name1": ParamInfo{
+								Name:        "Name1",
+								Help:        "Help to Name1",
+								Type:        IntegerType,
+								Destination: QueryPlaced,
+							},
+						},
+						Body:    "",
+						URLName: "hand2",
+						Help:    "another brief for hand 2",
+					},
+				}),
+				nil,
+			},
+			TestCases{
+				TestBrief{
+					HandName: "hand1",
+					Brief:    "Name: hand1\n\tbrief for hand 1\n",
+				},
+				TestBrief{
+					HandName: "hand2",
+					Brief:    "Name: hand2\n\tanother brief for hand 2\n",
+				},
+				TestBrief{
+					HandName: "",
+					Brief:    "Available requests:\n\nName: hand1\n\tbrief for hand 1\n\nName: hand2\n\tanother brief for hand 2\n\n",
+				},
+			},
+		},
+	}
+
+	for _, testCase := range testCases {
+		input := testCase.Inp
+		output := testCase.Out
+		processor := NewURLProcessor(input.Descriptions, nil)
+		for _, outCase := range output {
+			out := outCase.(TestBrief)
+
+			if out.HandName == "" {
+				continue
+			}
+
+			handDescr, err := processor.GetHand(out.HandName)
+			if err != nil {
+				t.Errorf("Failed to get brief handler %s for hand %s", err.Error(), out.HandName)
+				continue
+			}
+			buf := new(bytes.Buffer)
+			err = handDescr.WriteBrief(buf)
+			if err != nil {
+				t.Errorf("Failed to process brief %s for hand %s", err.Error(), out.HandName)
+			}
+			got := buf.String()
+			if got != out.Brief {
+				t.Errorf("Failed to get parameter brief %s expected \n '%s' got \n'%s'", out.HandName, out.Brief, got)
+			}
+		}
+
+		processor = NewURLProcessor(input.Descriptions, nil)
+		for _, outCase := range output {
+			out := outCase.(TestBrief)
+			if out.HandName != "" {
+				continue
+			}
+			buf := new(bytes.Buffer)
+			err := processor.WriteBriefHelp(buf)
+			if err != nil {
+				t.Errorf("Failed to process brief %s for hand %s", err.Error(), out.HandName)
+			}
+			got := buf.String()
+			if got != out.Brief {
+				t.Errorf("Failed to get parameter brief %s expected\n'%s'\n got\n'%s'", out.HandName, out.Brief, got)
+			}
+		}
+	}
+}
 
 func TestParametersList(t *testing.T) {
 	// Проверяем как обрабатывается запрос справки для отдельных параметров
@@ -147,6 +251,7 @@ func TestHelp(t *testing.T) {
 									Destination: QueryPlaced,
 								},
 							},
+							Help:    "hand1help",
 							Body:    "",
 							URLName: "hand1",
 						},
@@ -166,6 +271,7 @@ func TestHelp(t *testing.T) {
 									Destination: QueryPlaced,
 								},
 							},
+							Help:    "help 4 handNoURLParams",
 							Body:    "",
 							URLName: "handNoURLParams",
 						},
@@ -185,6 +291,7 @@ func TestHelp(t *testing.T) {
 									Destination: URLPlaced,
 								},
 							},
+							Help:    "help 4 handNoQueryParams",
 							Body:    "",
 							URLName: "handNoQueryParams",
 						},
@@ -193,6 +300,7 @@ func TestHelp(t *testing.T) {
 							Parameters:  ParamsDescription{},
 							Body:        "",
 							URLName:     "handNoParams",
+							Help:        "big help 4 handNoParams",
 						},
 						"handWithOptionalParam": { // Есть опциональный параметр
 							URLTemplate: "http://example.com/entity",
@@ -211,6 +319,7 @@ func TestHelp(t *testing.T) {
 									Destination: QueryPlaced,
 								},
 							},
+							Help:    "help 4 handWithOptionalParam",
 							Body:    "",
 							URLName: "handWithOptionalParam",
 						},
@@ -225,6 +334,7 @@ func TestHelp(t *testing.T) {
 									DefaultValue: 1,
 								},
 							},
+							Help:    "help 4 handWithDefaultValue",
 							Body:    "",
 							URLName: "handWithDefaultValue",
 						},
@@ -236,6 +346,7 @@ func TestHelp(t *testing.T) {
 				TestOutput{
 					HandName: "hand1",
 					Output: "Name: hand1\n" +
+						"\thand1help\n" +
 						"URL template: http://example.com/entity/{entity_id}/v/{v}\n" +
 						"Parameters:\n" +
 						"\nQueryParam1(Integer)\tQuery Param\n\tHelp to QueryParam1\n" +
@@ -246,6 +357,7 @@ func TestHelp(t *testing.T) {
 				TestOutput{
 					HandName: "handNoURLParams",
 					Output: "Name: handNoURLParams\n" +
+						"\thelp 4 handNoURLParams\n" +
 						"URL template: http://example.com/entity\n" +
 						"Parameters:\n" +
 						"\nQueryParam1(Integer)\tQuery Param\n\tHelp to QueryParam1\n" +
@@ -254,6 +366,7 @@ func TestHelp(t *testing.T) {
 				TestOutput{
 					HandName: "handNoQueryParams",
 					Output: "Name: handNoQueryParams\n" +
+						"\thelp 4 handNoQueryParams\n" +
 						"URL template: http://example.com/entity/{entity_id}/v/{v}\n" +
 						"Parameters:\n" +
 						"\nentity_id(Integer)\tURL Param\n\tHelp to entity_id\n" +
@@ -262,6 +375,7 @@ func TestHelp(t *testing.T) {
 				TestOutput{
 					HandName: "handWithOptionalParam",
 					Output: "Name: handWithOptionalParam\n" +
+						"\thelp 4 handWithOptionalParam\n" +
 						"URL template: http://example.com/entity\n" +
 						"Parameters:\n" +
 						"\nQueryParam1(Integer)\tQuery Param\t[Optional]\n\tHelp to QueryParam1\n" +
@@ -270,6 +384,7 @@ func TestHelp(t *testing.T) {
 				TestOutput{
 					HandName: "handWithDefaultValue",
 					Output: "Name: handWithDefaultValue\n" +
+						"\thelp 4 handWithDefaultValue\n" +
 						"URL template: http://example.com/entity\n" +
 						"Parameters:\n" +
 						"\nQueryParam1(Integer)\tQuery Param\t[Optional]\n\tDefault: 1\n\tHelp to QueryParam1\n",

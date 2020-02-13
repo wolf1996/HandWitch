@@ -7,6 +7,7 @@ import (
 //DescriptionsSource DescriptionsSource get URL record by name
 type DescriptionsSource interface {
 	GetByName(string) (*URLRecord, error)
+	GetAllRecords() ([]URLRecord, error)
 }
 
 //SimpleDescriptionsSource implementation of DescriptionsSource with
@@ -28,6 +29,15 @@ func (source *SimpleDescriptionsSource) GetByName(name string) (*URLRecord, erro
 		return nil, ErrNonExistentHand
 	}
 	return &value, nil
+}
+
+//GetAllRecords get url data by name
+func (source *SimpleDescriptionsSource) GetAllRecords() ([]URLRecord, error) {
+	result := make([]URLRecord, 0, len(source.descriptions))
+	for _, value := range source.descriptions {
+		result = append(result, value)
+	}
+	return result, nil
 }
 
 //NewDescriptionSourceFromDict get simple descriprion source with data from map

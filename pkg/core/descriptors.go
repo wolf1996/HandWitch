@@ -44,9 +44,9 @@ func NewHandProcessor(rec *URLRecord, client *http.Client) (HandProcessor, error
 
 //WriteHelp write help to current data
 func (processor *HandProcessorImp) WriteHelp(writer io.Writer) error {
-	_, err := io.WriteString(writer, fmt.Sprintf("Name: %s\n", processor.URLName))
+	err := processor.WriteBrief(writer)
 	if err != nil {
-		return fmt.Errorf("Error while writing name %w", err)
+		return fmt.Errorf("Error while writing brief %w", err)
 	}
 	_, err = io.WriteString(writer, fmt.Sprintf("URL template: %s\n", processor.URLTemplate))
 	if err != nil {
@@ -74,6 +74,19 @@ func (processor *HandProcessorImp) WriteHelp(writer io.Writer) error {
 		if err != nil {
 			return fmt.Errorf("Error while writing parameters help for key %s: %w", key, err)
 		}
+	}
+	return nil
+}
+
+//WriteBrief write help to current data
+func (processor *HandProcessorImp) WriteBrief(writer io.Writer) error {
+	_, err := io.WriteString(writer, fmt.Sprintf("Name: %s\n", processor.URLName))
+	if err != nil {
+		return fmt.Errorf("Error while writing name %w", err)
+	}
+	_, err = io.WriteString(writer, fmt.Sprintf("\t%s\n", processor.Help))
+	if err != nil {
+		return fmt.Errorf("Error while writing name %w", err)
 	}
 	return nil
 }

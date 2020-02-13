@@ -103,6 +103,7 @@ type URLProcessor struct {
 //HandProcessor hand processor
 type HandProcessor interface {
 	WriteHelp(writer io.Writer) error
+	WriteBrief(writer io.Writer) error
 	Process(ctx context.Context, writer io.Writer, params map[string]interface{}, logger *log.Entry) error
 	GetInfo() *URLRecord
 	GetParam(string) (ParamProcessor, error)
@@ -133,4 +134,33 @@ func (processor *URLProcessor) GetHand(name string) (HandProcessor, error) {
 		return nil, err
 	}
 	return NewHandProcessor(URLInfo, processor.httpClient)
+}
+
+//WriteBriefHelp write brief help for every hand in description source
+func (processor *URLProcessor) WriteBriefHelp(writer io.Writer) error {
+	records, err := processor.container.GetAllRecords()
+	if err != nil {
+		return err
+	}
+	_, err = io.WriteString(writer, "Available requests:\n\n")
+	if err != nil {
+		return err
+	}
+	for _, record := range records {
+		name := record.URLName
+		// TODO: переделать на что-то более рациональное
+		hand, err := processor.GetHand(name)
+		if err != nil {
+			return fmt.Errorf("error on building hand \"%s\" \"%w\" while writing brief", name, err)
+		}
+		err = hand.WriteBrief(writer)
+		if err != nil {
+			return fmt.Errorf("error on writing brief %w while writing common brief", err)
+		}
+		_, err = io.WriteString(writer, "\n")
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
