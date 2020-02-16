@@ -1,8 +1,10 @@
 package bot
 
 import (
+	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 )
 
 // GetClientWithProxy Получает http client работающий через указанный
@@ -19,4 +21,13 @@ func GetClientWithProxy(proxyString string) (*http.Client, error) {
 		Transport: transport,
 	}
 	return client, nil
+}
+
+func getHandNameFromArguments(messageArguments string) (string, error) {
+	rows := strings.Split(messageArguments, "\n")
+	if len(rows) < 1 {
+		return "", fmt.Errorf("Failed to get hand name: empty arguments")
+	}
+	handName := rows[0]
+	return strings.TrimSpace(handName), nil
 }

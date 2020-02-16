@@ -1,7 +1,6 @@
 package bot
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -25,7 +24,7 @@ type comand interface {
 	Process(string) error
 }
 
-type comandFabric = func(ctx context.Context, handProc core.HandProcessor, tg telegram, log *log.Entry) comand
+type comandFabric = func(ctx context.Context, urlProcessor core.URLProcessor, tg telegram, log *log.Entry) comand
 
 func getTaskKeyFromMessage(message *tgbotapi.Message) (taskKey, error) {
 	return taskKey{
@@ -58,6 +57,7 @@ func NewBot(client *http.Client, token string, app core.URLProcessor, auth Autho
 	cmds := make(map[string]comandFabric)
 	cmds["process"] = newProcessCommand
 	cmds["help"] = newHelpCommand
+	cmds["start"] = newStartCommand
 	return &Bot{
 		api:        bot,
 		app:        app,
@@ -68,29 +68,9 @@ func NewBot(client *http.Client, token string, app core.URLProcessor, auth Autho
 	}, nil
 }
 
-func (b *Bot) getHandName(messageArguments string) (string, error) {
-	rows := strings.Split(messageArguments, "\n")
-	if len(rows) < 1 {
-		return "", fmt.Errorf("Failed to get hand name: empty arguments")
-	}
-	handName := rows[0]
-	return strings.TrimSpace(handName), nil
-}
-
 func (b *Bot) processCmd(ctx context.Context, messageArguments string, message *tgbotapi.Message, input messagesChan, fabric comandFabric, logger *log.Entry) error {
-	if messageArguments == "" {
-		return errors.New("Empty arguments")
-	}
-	handName, err := b.getHandName(messageArguments)
-	if err != nil {
-		return err
-	}
-	handProcessor, err := b.app.GetHand(handName)
-	if err != nil {
-		return err
-	}
 	tg := newWrapper(input, b.api, message, b.formating, logger)
-	command := fabric(ctx, handProcessor, tg, logger)
+	command := fabric(ctx, b.app, tg, logger)
 	return command.Process(messageArguments)
 }
 

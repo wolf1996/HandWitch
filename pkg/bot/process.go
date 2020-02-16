@@ -11,10 +11,10 @@ import (
 )
 
 type processCommand struct {
-	ctx      context.Context
-	tg       telegram
-	handProc core.HandProcessor
-	log      *log.Entry
+	ctx     context.Context
+	tg      telegram
+	urlProc core.URLProcessor
+	log     *log.Entry
 }
 
 // processingState базовый интерфейс для процессинга
@@ -305,12 +305,12 @@ func (st *cancelState) Do() (processingState, error) {
 
 //-------------------------------------------------- base methods -----------------------------------------------------------
 
-func newProcessCommand(ctx context.Context, handProc core.HandProcessor, tg telegram, log *log.Entry) comand {
+func newProcessCommand(ctx context.Context, urlProc core.URLProcessor, tg telegram, log *log.Entry) comand {
 	return &processCommand{
-		ctx:      ctx,
-		tg:       tg,
-		handProc: handProc,
-		log:      log,
+		ctx:     ctx,
+		tg:      tg,
+		urlProc: urlProc,
+		log:     log,
 	}
 }
 
@@ -318,16 +318,26 @@ func (proc *processCommand) Process(messageArguments string) error {
 	if messageArguments == "" {
 		return errors.New("Empty arguments")
 	}
+
+	name, err := getHandNameFromArguments(messageArguments)
+	if err != nil {
+		return fmt.Errorf("Failed to parse hand name from arguments %w", err)
+	}
+
+	handProc, err := proc.urlProc.GetHand(name)
+	if err != nil {
+		return fmt.Errorf("failed to get hand processor by name %s, %w", name, err)
+	}
+
 	var currentState processingState = &startState{
 		baseState: baseState{
 			ctx:           proc.ctx,
 			logger:        proc.log,
-			handProcessor: proc.handProc,
+			handProcessor: handProc,
 			tg:            proc.tg,
 		},
 		arguments: messageArguments,
 	}
-	var err error
 	for currentState != nil {
 		currentState, err = currentState.Do()
 	}
