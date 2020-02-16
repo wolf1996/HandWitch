@@ -3,6 +3,7 @@ package bot
 import (
 	"context"
 	"fmt"
+	"io"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -27,7 +28,32 @@ func newHelpCommand(ctx context.Context, urlProc core.URLProcessor, tg telegram,
 
 func (proc *helpCommand) processCommonHelp() error {
 	var respWriter strings.Builder
-	err := proc.urlProc.WriteBriefHelp(&respWriter)
+	_, err := io.WriteString(&respWriter, "HandWhitch helps you to  make requests from telegram\n")
+	if err != nil {
+		return err
+	}
+	_, err = io.WriteString(&respWriter, "available commands:\n")
+	if err != nil {
+		return err
+	}
+	_, err = io.WriteString(&respWriter, "\t /process {requestname} - to work with requestname\n")
+	if err != nil {
+		return err
+	}
+	_, err = io.WriteString(&respWriter, "\t /help {requestname} - to work get help for requestname\n")
+	if err != nil {
+		return err
+	}
+	_, err = io.WriteString(&respWriter, "\t /help - to work get common bot help\n")
+	if err != nil {
+		return err
+	}
+	_, err = io.WriteString(&respWriter, "\n")
+	if err != nil {
+		return err
+	}
+
+	err = proc.urlProc.WriteBriefHelp(&respWriter)
 	if err != nil {
 		return err
 	}
