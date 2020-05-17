@@ -6,13 +6,19 @@ import (
 	"io/ioutil"
 )
 
+type HookInfo struct {
+	URLPath string `json:"url"`
+	Cert    string `json:"cert"`
+}
+
 // Config main bot configuration
 type Config struct {
-	Formatting string `json:"formatting"`
-	LogLevel   string `json:"log_level"`
-	Path       string `json:"path"`
-	WhiteList  string `json:"white_list"`
-	Proxy      string `json:"proxy"`
+	Formatting string    `json:"formatting"`
+	LogLevel   string    `json:"log_level"`
+	Path       string    `json:"path"`
+	WhiteList  string    `json:"white_list"`
+	Proxy      string    `json:"proxy"`
+	Hook       *HookInfo `json:"hook"`
 }
 
 // GetConfigFromJSON parses config from reader as a JSON

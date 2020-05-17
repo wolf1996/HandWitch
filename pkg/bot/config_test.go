@@ -1,6 +1,8 @@
 package bot
 
 import (
+	"fmt"
+	"reflect"
 	"strings"
 	"testing"
 )
@@ -36,6 +38,34 @@ func TestDescriptionsLoader(t *testing.T) {
 				Err: nil,
 			},
 		},
+		{
+			Name: "with hook",
+			Input: `{
+				"formatting": "Markdown",
+				"log_level": "Debug",
+				"path": "/path/descriptions.json",
+				"white_list": "/path/whitelist.json",
+				"proxy": "http://163.172.152.52:8811",
+				"hook": {
+					"url": "https://url.com/secretpath",
+					"cert": "certpath.pem"
+				}
+			 }`,
+			Output: DescriptionParsingResults{
+				Output: Config{
+					Formatting: "Markdown",
+					LogLevel:   "Debug",
+					Path:       "/path/descriptions.json",
+					WhiteList:  "/path/whitelist.json",
+					Proxy:      "http://163.172.152.52:8811",
+					Hook: &HookInfo{
+						URLPath: "https://url.com/secretpath",
+						Cert:    "certpath.pem",
+					},
+				},
+				Err: nil,
+			},
+		},
 	}
 	for _, testCase := range testCases {
 		reader := strings.NewReader(testCase.Input)
@@ -50,8 +80,17 @@ func TestDescriptionsLoader(t *testing.T) {
 			t.Errorf("%s: Not equal errors, got %s, expected %s", testCase.Name, safeErrorPrint(errResult), safeErrorPrint(testCase.Output.Err))
 		}
 
-		if testCase.Output.Output != *result {
+		if reflect.DeepEqual(testCase.Output.Output, result) {
 			t.Errorf("%s: error on results comparision %v  %v", testCase.Name, testCase.Output.Output, result)
+			getHookStr := func(hook *HookInfo) string {
+				repr := "nil"
+				if hook != nil {
+					repr = fmt.Sprintf("%v", *hook)
+				}
+				return repr
+			}
+			t.Logf("Hook expected: %s", getHookStr(testCase.Output.Output.Hook))
+			t.Logf("Hook got: %s", getHookStr(result.Hook))
 		}
 	}
 }
