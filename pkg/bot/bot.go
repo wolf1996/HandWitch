@@ -208,12 +208,19 @@ func (b *Bot) processUpdate(ctx context.Context, update tgbotapi.Update, logger 
 	return b.handleMessage(ctx, update.Message, messageLogger)
 }
 
-// Listen слушаем сообщения и отправляем ответ
-func (b *Bot) Listen(ctx context.Context, logger *log.Logger) error {
+func (b *Bot) activeModUpdatesChan() (tgbotapi.UpdatesChannel, error) {
 	u := tgbotapi.NewUpdate(0)
 	u.Timeout = 60
+	return b.api.GetUpdatesChan(u)
+}
 
-	updates, err := b.api.GetUpdatesChan(u)
+func (b *Bot) getUpdatesChan() (tgbotapi.UpdatesChannel, error) {
+	return b.activeModUpdatesChan()
+}
+
+// Listen слушаем сообщения и отправляем ответ
+func (b *Bot) Listen(ctx context.Context, logger *log.Logger) error {
+	updates, err := b.getUpdatesChan()
 	if err != nil {
 		return err
 	}
