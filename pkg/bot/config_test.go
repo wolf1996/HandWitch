@@ -47,8 +47,9 @@ func TestDescriptionsLoader(t *testing.T) {
 				"white_list": "/path/whitelist.json",
 				"proxy": "http://163.172.152.52:8811",
 				"hook": {
-					"url": "https://url.com/secretpath",
-					"cert": "certpath.pem"
+					"url_path": "https://url.com/secretpath",
+					"cert": "certpath.pem",
+					"key": "keypath.pem"
 				}
 			 }`,
 			Output: DescriptionParsingResults{
@@ -61,6 +62,7 @@ func TestDescriptionsLoader(t *testing.T) {
 					Hook: &HookInfo{
 						URLPath: "https://url.com/secretpath",
 						Cert:    "certpath.pem",
+						Key:     "keypath.pem",
 					},
 				},
 				Err: nil,

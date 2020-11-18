@@ -33,6 +33,14 @@ func getTaskKeyFromMessage(message *tgbotapi.Message) (taskKey, error) {
 	}, nil
 }
 
+type HookConfig struct {
+	URLPath string
+	Host    string
+	Port    string
+	Cert    string
+	Key     string
+}
+
 // Bot создаёт общий интерфейс для бота
 type Bot struct {
 	api        *tgbotapi.BotAPI
@@ -41,10 +49,11 @@ type Bot struct {
 	formating  string
 	processing inProgresTask
 	cmds       map[string]comandFabric
+	hookCfg    *HookConfig
 }
 
 // NewBot создаёт новый инстанс бота
-func NewBot(client *http.Client, token string, app core.URLProcessor, auth Authorisation, formating string) (*Bot, error) {
+func NewBot(client *http.Client, token string, app core.URLProcessor, auth Authorisation, formating string, hookCfg *HookConfig) (*Bot, error) {
 	bot, err := tgbotapi.NewBotAPIWithClient(token, client)
 	if err != nil {
 		return nil, fmt.Errorf("failed create new bot api with client %w", err)
@@ -65,6 +74,7 @@ func NewBot(client *http.Client, token string, app core.URLProcessor, auth Autho
 		formating:  normalizedMessageMode,
 		processing: make(inProgresTask),
 		cmds:       cmds,
+		hookCfg:    hookCfg,
 	}, nil
 }
 
@@ -214,13 +224,44 @@ func (b *Bot) activeModUpdatesChan() (tgbotapi.UpdatesChannel, error) {
 	return b.api.GetUpdatesChan(u)
 }
 
-func (b *Bot) getUpdatesChan() (tgbotapi.UpdatesChannel, error) {
+func (b *Bot) hookModUpdatesChan(logger *log.Logger) (tgbotapi.UpdatesChannel, error) {
+	if b.hookCfg == nil {
+		return nil, fmt.Errorf("No config for hook provided")
+	}
+	_, err := b.api.SetWebhook(tgbotapi.NewWebhookWithCert(b.hookCfg.URLPath, b.hookCfg.Cert))
+	if err != nil {
+		return nil, fmt.Errorf("Failed to create webhook: %w", err)
+	}
+	info, err := b.api.GetWebhookInfo()
+	if err != nil {
+		return nil, fmt.Errorf("Failed to get webhook info: %w", err)
+	}
+	if info.LastErrorDate != 0 {
+		return nil, fmt.Errorf("Telegram callback failed: %s", info.LastErrorMessage)
+	}
+	updates := b.api.ListenForWebhook("/" + b.hookCfg.URLPath)
+	serveFunc := func() {
+		listenHost := "0.0.0.0"
+		if b.hookCfg.Port != "" {
+			listenHost += ":" + b.hookCfg.Port
+		}
+		err := http.ListenAndServeTLS(listenHost, b.hookCfg.Cert, b.hookCfg.Key, nil)
+		logger.Fatalf("failed to start bot: %w", err)
+	}
+	go serveFunc()
+	return updates, nil
+}
+
+func (b *Bot) getUpdatesChan(logger *log.Logger) (tgbotapi.UpdatesChannel, error) {
+	if b.hookCfg != nil {
+		return b.hookModUpdatesChan(logger)
+	}
 	return b.activeModUpdatesChan()
 }
 
 // Listen слушаем сообщения и отправляем ответ
 func (b *Bot) Listen(ctx context.Context, logger *log.Logger) error {
-	updates, err := b.getUpdatesChan()
+	updates, err := b.getUpdatesChan(logger)
 	if err != nil {
 		return err
 	}

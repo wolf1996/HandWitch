@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 
@@ -86,6 +87,29 @@ func buildTelegramAuth(authPath string, log *log.Logger) (bot.Authorisation, err
 	return bot.DummyAuthorisation{}, nil
 }
 
+func tryExtractHookInfo() (*bot.HookConfig, error) {
+	var cfg bot.Config
+	viper.Unmarshal(&cfg)
+	hookInfo := cfg.Hook
+	if hookInfo == nil {
+		return nil, fmt.Errorf("nil hookInfo")
+	}
+
+	url, err := url.Parse(hookInfo.URLPath)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to parse url from config: %w", err)
+	}
+
+	var bot bot.HookConfig
+	bot.Cert = hookInfo.Cert
+	bot.Key = hookInfo.Key
+	bot.Port = url.Port()
+	bot.Host = url.Host
+	bot.URLPath = url.RawPath
+
+	return &bot, nil
+}
+
 func exec(cmd *cobra.Command, args []string) error {
 	loglevelStr := viper.GetString("log_level")
 	loglevel, err := log.ParseLevel(loglevelStr)
@@ -132,7 +156,15 @@ func exec(cmd *cobra.Command, args []string) error {
 	}
 
 	log.Info("Creating telegram bot api client")
-	botInstance, err := bot.NewBot(httpClient, token, *urlContainer, auth, formating)
+
+	hookConfig, err := tryExtractHookInfo()
+
+	if err != nil {
+		logger.Info("Failed to get hook info %s", err)
+		hookConfig = nil
+	}
+
+	botInstance, err := bot.NewBot(httpClient, token, *urlContainer, auth, formating, hookConfig)
 	if err != nil {
 		logger.Errorf("Failed to create bot %s", err.Error())
 		return nil

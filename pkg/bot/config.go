@@ -7,8 +7,9 @@ import (
 )
 
 type HookInfo struct {
-	URLPath string `json:"url"`
+	URLPath string `json:"url_path"`
 	Cert    string `json:"cert"`
+	Key     string `json:"key"`
 }
 
 // Config main bot configuration
