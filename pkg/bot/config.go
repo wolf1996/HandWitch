@@ -7,7 +7,7 @@ import (
 )
 
 type HookInfo struct {
-	URLPath string `json:"url_path"`
+	URLPath string `json:"path"`
 	Cert    string `json:"cert"`
 	Key     string `json:"key"`
 }

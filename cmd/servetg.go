@@ -88,21 +88,49 @@ func buildTelegramAuth(authPath string, log *log.Logger) (bot.Authorisation, err
 }
 
 func tryExtractHookInfo() (*bot.HookConfig, error) {
-	var cfg bot.Config
-	viper.Unmarshal(&cfg)
-	hookInfo := cfg.Hook
-	if hookInfo == nil {
-		return nil, fmt.Errorf("nil hookInfo")
+	// TODO: Переделать на нормальный парсинг конфига
+
+	hookMap := viper.GetStringMap("hook")
+
+	if len(hookMap) == 0 {
+		return nil, fmt.Errorf("no hook info")
 	}
 
-	url, err := url.Parse(hookInfo.URLPath)
+	getHookField := func(fieldName string) (string, error) {
+		value, ok := hookMap[fieldName]
+		if !ok {
+			return "", fmt.Errorf("no field with such name")
+		}
+		strValue, ok := value.(string)
+		if !ok {
+			return "", fmt.Errorf("field type is not string")
+		}
+		return strValue, nil
+	}
+
+	urlStr, err := getHookField("url")
+	if err != nil {
+		return nil, fmt.Errorf("Can't get url info %w", err)
+	}
+
+	cert, err := getHookField("cert")
+	if err != nil {
+		return nil, fmt.Errorf("Can't get cert info %w", err)
+	}
+
+	key, err := getHookField("key")
+	if err != nil {
+		return nil, fmt.Errorf("Can't get key info %w", err)
+	}
+
+	url, err := url.Parse(urlStr)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to parse url from config: %w", err)
 	}
 
 	var bot bot.HookConfig
-	bot.Cert = hookInfo.Cert
-	bot.Key = hookInfo.Key
+	bot.Cert = cert
+	bot.Key = key
 	bot.Port = url.Port()
 	bot.Host = url.Host
 	bot.URLPath = url.RawPath
@@ -160,7 +188,7 @@ func exec(cmd *cobra.Command, args []string) error {
 	hookConfig, err := tryExtractHookInfo()
 
 	if err != nil {
-		logger.Info("Failed to get hook info %s", err)
+		logger.Infof("Failed to get hook info %s", err.Error())
 		hookConfig = nil
 	}
 
