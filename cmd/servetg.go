@@ -133,7 +133,7 @@ func tryExtractHookInfo() (*bot.HookConfig, error) {
 	bot.Key = key
 	bot.Port = url.Port()
 	bot.Host = url.Host
-	bot.URLPath = url.RawPath
+	bot.URLPath = url.Path
 
 	return &bot, nil
 }
