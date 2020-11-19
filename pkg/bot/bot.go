@@ -229,7 +229,7 @@ func (b *Bot) hookModUpdatesChan(logger *log.Logger) (tgbotapi.UpdatesChannel, e
 		return nil, fmt.Errorf("No config for hook provided")
 	}
 	fullHookPath := fmt.Sprintf("https://%s%s", b.hookCfg.Host, b.hookCfg.URLPath)
-	logger.Info("Hook is %s", fullHookPath)
+	logger.Infof("Hook is %s", fullHookPath)
 	_, err := b.api.SetWebhook(tgbotapi.NewWebhookWithCert(fullHookPath, b.hookCfg.Cert))
 	if err != nil {
 		return nil, fmt.Errorf("Failed to create webhook  : %w", err)
@@ -241,7 +241,7 @@ func (b *Bot) hookModUpdatesChan(logger *log.Logger) (tgbotapi.UpdatesChannel, e
 	if info.LastErrorDate != 0 {
 		return nil, fmt.Errorf("Telegram callback failed: %s", info.LastErrorMessage)
 	}
-	logger.Info("set webhook %v", info)
+	logger.Infof("set webhook %v", info)
 	updates := b.api.ListenForWebhook(b.hookCfg.URLPath)
 	serveFunc := func() {
 		listenHost := "0.0.0.0"
@@ -249,7 +249,7 @@ func (b *Bot) hookModUpdatesChan(logger *log.Logger) (tgbotapi.UpdatesChannel, e
 			listenHost += ":" + b.hookCfg.Port
 		}
 		err := http.ListenAndServeTLS(listenHost, b.hookCfg.Cert, b.hookCfg.Key, nil)
-		logger.Fatalf("failed to start bot: %w", err)
+		logger.Fatalf("failed to start bot: %s", err.Error())
 	}
 	go serveFunc()
 	return updates, nil
