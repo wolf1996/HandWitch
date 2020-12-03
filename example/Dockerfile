@@ -11,7 +11,7 @@ COPY server.go .
 
 RUN go build -o Server
 
-FROM alpine:latest as bin
+FROM alpine:3.12 as bin
 
 WORKDIR /server/
 

@@ -5,7 +5,7 @@ services:
     volumes:
       - ../example/config.json:/config.json 
       - ../example/whitelist.json:/HandWitch/whitelist.json 
-      - ./descriptions-com.yaml:/HandWitch/descriptions.yaml 
+      - ./descriptions_compose.yaml:/HandWitch/descriptions.yaml 
       - ./crt:/crt/
     ports:
       - "8443:8443"

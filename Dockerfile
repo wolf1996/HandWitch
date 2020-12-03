@@ -11,7 +11,11 @@ COPY . .
 
 RUN go build
 
-FROM alpine:latest as bin
+FROM alpine:3.12 as bin
+
+RUN apk update \
+ && apk add jq \
+ && rm -rf /var/cache/apk/*
 
 WORKDIR /HandWitch/
 
