@@ -1,0 +1,8 @@
+{
+	"log_level": "Debug",
+	"path": "./descriptions.yaml",
+	"telegram": {
+		"white_list": "./whitelist.json",
+		"formatting": "HTML"
+	}
+}

@@ -1,0 +1,13 @@
+{
+	"log_level": "Debug",
+	"path": "./descriptions.yaml",
+	"telegram": {
+		"white_list": "./whitelist.json",
+		"formatting": "HTML"
+	},
+	"hook": {
+		"cert": "PATH_TO_YOURPUBLIC.pem",
+		"key": "PATH_TO_YOURPRIVATE.key",
+		"url": "WEBHOOK_URL"
+	}
+}
