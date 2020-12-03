@@ -5,8 +5,8 @@ services:
     volumes:
       - ../example/config.json:/config.json 
       - ../example/whitelist.json:/HandWitch/whitelist.json 
-      - descriptions-compose.yaml:/HandWitch/descriptions.yaml 
-      - crt:/crt/
+      - ./descriptions-com.yaml:/HandWitch/descriptions.yaml 
+      - ./crt:/crt/
     ports:
       - "8443:8443"
     env_file:
@@ -15,5 +15,3 @@ services:
     build: ../example
     ports:
       - "8080:8080"
-volumes: 
-  crt:
