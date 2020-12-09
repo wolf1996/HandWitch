@@ -19,7 +19,7 @@ type ValidationError struct {
 
 func (val *ValidationError) Error() string {
 	if len(val.WrappedError) == 0 {
-		panic(fmt.Sprintf("Empty error requesting! %v", val))
+		panic(fmt.Sprintf("Empty error requesting! %s", val.Error()))
 	}
 	var builder strings.Builder
 	for _, err := range val.WrappedError {
