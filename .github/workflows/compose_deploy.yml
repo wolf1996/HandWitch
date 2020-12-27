@@ -19,4 +19,5 @@ jobs:
         key: ${{ secrets.KEY }}
         port: ${{ secrets.PORT }}
         source: "compose_example/docker-compose.yml"
-        target: "/HandWitch/docker-compose.yml"
+        target: "/HandWitch/"
+        strip_components: 1
