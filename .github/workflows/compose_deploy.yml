@@ -1,0 +1,21 @@
+on:
+  push:
+    branches:
+    - support_compose
+    paths:
+    - compose_example/docker-compose.yml
+jobs:
+  deploy_compose:
+    name: deploy_compose
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: send new compose file on server
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.KEY }}
+        port: ${{ secrets.PORT }}
+        source: "compose_example/docker-compose.yml"
+        target: "/HandWitch/docker-compose.yml"
