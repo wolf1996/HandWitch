@@ -1,3 +1,4 @@
+name: compose_file_deploy
 on:
   push:
     branches:
