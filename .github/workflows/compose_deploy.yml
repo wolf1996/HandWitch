@@ -3,8 +3,8 @@ on:
   push:
     branches:
     - support_compose
-    paths:
-    - compose_example/docker-compose.yml
+    # paths:
+    # - compose_example/docker-compose.yml
 jobs:
   deploy_compose:
     name: deploy_compose
