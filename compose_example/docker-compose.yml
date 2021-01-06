@@ -1,12 +1,7 @@
 version: "3.3"
 services:
   bot:
-    restart_policy: 
-      condition: on-failure
-      delay: 5s
-      max_attempts: 3
-      window: 120s
-    image: glazedcurd/handwitch
+    restart: on-failure
     volumes:
       - ./whitelist.json:/HandWitch/whitelist.json
       - ./descriptions_compose.yaml:/HandWitch/descriptions.yaml
@@ -19,15 +14,12 @@ services:
     ports:
       - "8443:8443"
   server:
-    restart_policy: 
-      condition: on-failure
-      delay: 5s
-      max_attempts: 3
-      window: 120s
+    restart: on-failure
     image: glazedcurd/handwitchexampleserver
     ports:
       - "8080:8080"
   watchtower:
+    restart: on-failure
     image: v2tec/watchtower
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
