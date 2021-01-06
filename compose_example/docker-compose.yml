@@ -27,3 +27,9 @@ services:
     image: glazedcurd/handwitchexampleserver
     ports:
       - "8080:8080"
+  watchtower:
+    image: v2tec/watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /root/.docker/config.json:/config.json
+    command: --interval 30
