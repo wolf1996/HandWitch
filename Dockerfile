@@ -20,9 +20,6 @@ RUN apk update \
 WORKDIR /HandWitch/
 
 COPY --from=build /build/HandWitch .
-COPY example/config.json .
-COPY example/whitelist.json .
-COPY example/descriptions.yaml .
 COPY compose_example/utils utils
 COPY compose_example/config_hook_part.json .
 COPY compose_example/config_template.json .
