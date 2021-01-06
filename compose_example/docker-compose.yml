@@ -1,6 +1,11 @@
 version: "3.3"
 services:
   bot:
+    restart_policy: 
+      condition: on-failure
+      delay: 5s
+      max_attempts: 3
+      window: 120s
     image: glazedcurd/handwitch
     volumes:
       - ./whitelist.json:/HandWitch/whitelist.json
@@ -14,6 +19,11 @@ services:
     ports:
       - "8443:8443"
   server:
+    restart_policy: 
+      condition: on-failure
+      delay: 5s
+      max_attempts: 3
+      window: 120s
     image: glazedcurd/handwitchexampleserver
     ports:
       - "8080:8080"
