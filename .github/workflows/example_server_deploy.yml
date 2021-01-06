@@ -4,8 +4,8 @@ on:
     branches:
     - support_compose
     paths:
-      example/server.go
-      example/Dockerfile
+    - example/server.go
+    - example/Dockerfile
 jobs:
   push_to_registry:
     name: push server example image to Docker Hub

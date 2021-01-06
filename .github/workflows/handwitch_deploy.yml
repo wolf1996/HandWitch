@@ -4,10 +4,10 @@ on:
     branches:
     - support_compose
     paths:
-      main.go
-      go.mod
-      go.sum
-      pkg
+    - main.go
+    - go.mod
+    - go.sum
+    - pkg
 jobs:
   push_to_registry:
     name: deploy handwitch image to Docker Hub
