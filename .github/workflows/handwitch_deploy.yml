@@ -10,7 +10,7 @@ on:
       pkg
 jobs:
   push_to_registry:
-    name: Push Docker image to Docker Hub
+    name: deploy handwitch image to Docker Hub
     runs-on: ubuntu-latest
     steps:
       - name: Check out the repo

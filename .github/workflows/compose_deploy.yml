@@ -21,3 +21,16 @@ jobs:
         source: "compose_example/docker-compose.yml"
         target: "/HandWitch/"
         strip_components: 1
+    - name: apply compose file
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.KEY }}
+        port: ${{ secrets.PORT }}
+        script: |
+          docker-compose up -d \
+            -e TELEGRAM_BOT_SSL_PUB_NAME=YOURPUBLIC.pem \
+            -e TELEGRAM_BOT_SSL_PRIV_NAME=YOURPRIVATE.key \
+            -e HANDWITCH_USE_WEBHOOK=${{ secrets.HANDWITCH_USE_WEBHOOK }} \
+            -e HANDWITCH_TELEGRAMM_TOKEN=${{ secrets.HANDWITCH_TELEGRAMM_TOKEN }}

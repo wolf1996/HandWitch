@@ -1,17 +1,15 @@
 version: "3.3"
 services:
   bot:
-    build: ..
+    image: glazedcurd/handwitch
     volumes:
       - ../example/whitelist.json:/HandWitch/whitelist.json 
       - ./descriptions_compose.yaml:/HandWitch/descriptions.yaml 
       - ./crt:/crt/
       - ./utils:/HandWitch/utils/
-      - ./config_hook_part.json:/HandWitch/config_hook_part.json
-      - ./config_template.json:/HandWitch/config_template.json
     ports:
       - "8443:8443"
   server:
-    build: ../example
+    image: glazedcurd/handwitchexampleserver
     ports:
       - "8080:8080"
