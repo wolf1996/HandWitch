@@ -238,9 +238,9 @@ func (b *Bot) hookModUpdatesChan(logger *log.Logger) (tgbotapi.UpdatesChannel, e
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get webhook info: %w", err)
 	}
-	if info.LastErrorDate != 0 {
-		return nil, fmt.Errorf("Telegram callback failed: %s", info.LastErrorMessage)
-	}
+	// if info.LastErrorDate != 0 {
+	// 	return nil, fmt.Errorf("Telegram callback failed: %s", info.LastErrorMessage)
+	// }
 	logger.Infof("set webhook %v", info)
 	updates := b.api.ListenForWebhook(b.hookCfg.URLPath)
 	serveFunc := func() {
