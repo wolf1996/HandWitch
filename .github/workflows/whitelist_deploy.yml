@@ -3,8 +3,8 @@ on:
   push:
     branches:
     - support_compose
-    paths:
-    - example/whitelist.json
+    # paths:
+    # - example/whitelist.json
 jobs:
   deploy_compose:
     name: deploy_descriptions
