@@ -1,0 +1,23 @@
+name: descriptions_file_deploy
+on:
+  push:
+    branches:
+    - support_compose
+    # paths:
+    # - compose_example/descriptions_compose.yaml
+jobs:
+  deploy_compose:
+    name: deploy_descriptions
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: send new compose file on server
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.KEY }}
+        port: ${{ secrets.PORT }}
+        source: "compose_example/descriptions_compose.yaml"
+        target: "/HandWitch/"
+        strip_components: 1
