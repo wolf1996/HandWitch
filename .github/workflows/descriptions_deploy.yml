@@ -3,8 +3,8 @@ on:
   push:
     branches:
     - support_compose
-    # paths:
-    # - compose_example/descriptions_compose.yaml
+    paths:
+    - compose_example/descriptions_compose.yaml
 jobs:
   deploy_compose:
     name: deploy_descriptions
