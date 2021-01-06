@@ -30,6 +30,7 @@ jobs:
         port: ${{ secrets.PORT }}
         script: |
           cd /HandWitch
+          docker-compose pull
           TELEGRAM_BOT_SSL_PUB_NAME=YOURPUBLIC.pem \
           TELEGRAM_BOT_SSL_PRIV_NAME=YOURPRIVATE.key \
           HANDWITCH_USE_WEBHOOK=${{ secrets.HANDWITCH_USE_WEBHOOK }} \

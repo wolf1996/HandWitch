@@ -3,8 +3,8 @@ services:
   bot:
     image: glazedcurd/handwitch
     volumes:
-      - ../example/whitelist.json:/HandWitch/whitelist.json 
-      - ./descriptions_compose.yaml:/HandWitch/descriptions.yaml 
+      - ./whitelist.json:/HandWitch/whitelist.json
+      - ./descriptions_compose.yaml:/HandWitch/descriptions.yaml
       - ./crt:/crt/
     environment:
       - TELEGRAM_BOT_SSL_PUB_NAME
