@@ -3,11 +3,11 @@ on:
   push:
     branches:
     - support_compose
-    paths:
-      main.go
-      go.mod
-      go.sum
-      pkg
+    # paths:
+    #   main.go
+    #   go.mod
+    #   go.sum
+    #   pkg
 jobs:
   push_to_registry:
     name: deploy handwitch image to Docker Hub
@@ -21,4 +21,3 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
           repository: glazedcurd/handwitch
-          tag_with_ref: true

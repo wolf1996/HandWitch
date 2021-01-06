@@ -33,6 +33,6 @@ jobs:
           TELEGRAM_BOT_SSL_PUB_NAME=YOURPUBLIC.pem \
           TELEGRAM_BOT_SSL_PRIV_NAME=YOURPRIVATE.key \
           HANDWITCH_USE_WEBHOOK=${{ secrets.HANDWITCH_USE_WEBHOOK }} \
-          HANDWITCH_TELEGRAMM_TOKEN=${{ secrets.HANDWITCH_TELEGRAMM_TOKEN }}
+          HANDWITCH_TELEGRAMM_TOKEN=${{ secrets.HANDWITCH_TELEGRAMM_TOKEN }} \
           docker-compose up -d --force-recreate
 
