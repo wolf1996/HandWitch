@@ -7,6 +7,11 @@ services:
       - ./descriptions_compose.yaml:/HandWitch/descriptions.yaml 
       - ./crt:/crt/
       - ./utils:/HandWitch/utils/
+    environment:
+      - TELEGRAM_BOT_SSL_PUB_NAME
+      - TELEGRAM_BOT_SSL_PRIV_NAME
+      - HANDWITCH_USE_WEBHOOK
+      - HANDWITCH_TELEGRAMM_TOKEN
     ports:
       - "8443:8443"
   server:
