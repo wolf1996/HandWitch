@@ -2,6 +2,7 @@ package core
 
 import (
 	"errors"
+	"sort"
 )
 
 //DescriptionsSource DescriptionsSource get URL record by name
@@ -34,9 +35,16 @@ func (source *SimpleDescriptionsSource) GetByName(name string) (*URLRecord, erro
 //GetAllRecords get url data by name
 func (source *SimpleDescriptionsSource) GetAllRecords() ([]URLRecord, error) {
 	result := make([]URLRecord, 0, len(source.descriptions))
-	for _, value := range source.descriptions {
-		result = append(result, value)
+	keys := make([]string, 0, len(source.descriptions))
+
+	for key := range source.descriptions {
+		keys = append(keys, key)
 	}
+	sort.Strings(keys)
+	for _, key := range keys {
+		result = append(result, source.descriptions[key])
+	}
+
 	return result, nil
 }
 
