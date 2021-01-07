@@ -1,0 +1,23 @@
+name: whitelist deploy
+on:
+  push:
+    branches:
+    - master
+    paths:
+    - example/whitelist.json
+jobs:
+  deploy_compose:
+    name: deploy_descriptions
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: send new whitelist
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.KEY }}
+        port: ${{ secrets.PORT }}
+        source: "example/whitelist.json"
+        target: "/HandWitch/"
+        strip_components: 1

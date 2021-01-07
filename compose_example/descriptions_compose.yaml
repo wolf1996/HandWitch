@@ -1,5 +1,5 @@
 example:
-  url_template: http://localhost:8080/{{.string_param}}/{{.int_param}}
+  url_template: http://server:8080/{{.string_param}}/{{.int_param}}
   parameters:
     query_int:
       help: param to demonstrate <b>int</b> param in query

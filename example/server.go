@@ -23,9 +23,9 @@ func handler(w http.ResponseWriter, r *http.Request) {
 	}
 	pathsParts = pathsParts[1:]
 	responce := make(map[string]interface{})
-	responce["string_argument"] = pathsParts[0]
+	responce["rsp_string_argument"] = pathsParts[0]
 	var err error
-	responce["int_argument"], err = strconv.Atoi(pathsParts[1])
+	responce["rsp_int_argument"], err = strconv.Atoi(pathsParts[1])
 	if err != nil {
 		errmsg := fmt.Sprintf("can't parse second path argument %s path should be like /{string}/{int}", pathsParts[1])
 		http.Error(w, fmt.Sprintf(errorTemplate, errmsg), http.StatusBadRequest)

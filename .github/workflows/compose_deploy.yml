@@ -1,0 +1,39 @@
+name: compose_file_deploy
+on:
+  push:
+    branches:
+    - master
+    paths:
+    - compose_example/docker-compose.yml
+jobs:
+  deploy_compose:
+    name: deploy_compose
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@master
+    - name: send new compose file on server
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.KEY }}
+        port: ${{ secrets.PORT }}
+        source: "compose_example/docker-compose.yml"
+        target: "/HandWitch/"
+        strip_components: 1
+    - name: apply compose file
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.HOST }}
+        username: ${{ secrets.USERNAME }}
+        key: ${{ secrets.KEY }}
+        port: ${{ secrets.PORT }}
+        script: |
+          cd /HandWitch
+          docker-compose pull
+          TELEGRAM_BOT_SSL_PUB_NAME=YOURPUBLIC.pem \
+          TELEGRAM_BOT_SSL_PRIV_NAME=YOURPRIVATE.key \
+          HANDWITCH_USE_WEBHOOK=${{ secrets.HANDWITCH_USE_WEBHOOK }} \
+          HANDWITCH_TELEGRAMM_TOKEN=${{ secrets.HANDWITCH_TELEGRAMM_TOKEN }} \
+          docker-compose up -d --force-recreate
+

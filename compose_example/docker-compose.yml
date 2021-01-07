@@ -1,0 +1,27 @@
+version: "3.3"
+services:
+  bot:
+    restart: on-failure
+    image: glazedcurd/handwitch 
+    volumes:
+      - ./whitelist.json:/HandWitch/whitelist.json
+      - ./descriptions_compose.yaml:/HandWitch/descriptions.yaml
+      - ./crt:/crt/
+    environment:
+      - TELEGRAM_BOT_SSL_PUB_NAME
+      - TELEGRAM_BOT_SSL_PRIV_NAME
+      - HANDWITCH_USE_WEBHOOK
+      - HANDWITCH_TELEGRAMM_TOKEN
+    ports:
+      - "8443:8443"
+  server:
+    restart: on-failure
+    image: glazedcurd/handwitchexampleserver
+    ports:
+      - "8080:8080"
+  watchtower:
+    restart: on-failure
+    image: v2tec/watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 30
