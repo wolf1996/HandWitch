@@ -32,7 +32,7 @@ func (source *SimpleDescriptionsSource) GetByName(name string) (*URLRecord, erro
 	return &value, nil
 }
 
-//GetAllRecords get url data by name
+//GetAllRecords get all url data sorted by name
 func (source *SimpleDescriptionsSource) GetAllRecords() ([]URLRecord, error) {
 	result := make([]URLRecord, 0, len(source.descriptions))
 	keys := make([]string, 0, len(source.descriptions))
