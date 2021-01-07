@@ -2,7 +2,7 @@ name: compose_file_deploy
 on:
   push:
     branches:
-    - support_compose
+    - master
     paths:
     - compose_example/docker-compose.yml
 jobs:

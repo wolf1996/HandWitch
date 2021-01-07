@@ -2,7 +2,7 @@ name: example bot service
 on:
   push:
     branches:
-    - support_compose
+    - master
     paths:
     - example/server.go
     - example/Dockerfile

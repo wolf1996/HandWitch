@@ -2,7 +2,7 @@ name: Deploy HandWitch Image
 on:
   push:
     branches:
-    - support_compose
+    - master
     paths:
     - main.go
     - go.mod

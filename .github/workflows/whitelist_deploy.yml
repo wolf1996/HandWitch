@@ -2,7 +2,7 @@ name: whitelist deploy
 on:
   push:
     branches:
-    - support_compose
+    - master
     paths:
     - example/whitelist.json
 jobs:

@@ -2,7 +2,7 @@ name: descriptions_file_deploy
 on:
   push:
     branches:
-    - support_compose
+    - master
     paths:
     - compose_example/descriptions_compose.yaml
 jobs:
