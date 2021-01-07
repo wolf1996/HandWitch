@@ -7,7 +7,11 @@ on:
     - main.go
     - go.mod
     - go.sum
-    - pkg
+    - Dockerfile
+    - 'pkg/**'
+    - 'cmd/**'
+    - 'vendor/**'
+    - 'compose_example/utils/**'
 jobs:
   push_to_registry:
     name: deploy handwitch image to Docker Hub
