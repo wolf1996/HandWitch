@@ -164,3 +164,16 @@ func (processor *URLProcessor) WriteBriefHelp(writer io.Writer) error {
 	}
 	return nil
 }
+
+// Get all availible urls names
+func (processor *URLProcessor) GetHandsNames() ([]string, error) {
+	result := []string{}
+	records, err := processor.container.GetAllRecords()
+	if err != nil {
+		return result, fmt.Errorf("Failed to build hands names list: %w", err)
+	}
+	for _, record := range records {
+		result = append(result, record.URLName)
+	}
+	return result, nil
+}

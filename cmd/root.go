@@ -10,6 +10,8 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
+	"github.com/wolf1996/HandWitch/cmd/telegram"
 )
 
 // initConfig устанавливаем конфигурационный файл в viper
@@ -111,13 +113,62 @@ func buildRootCmd() (*cobra.Command, error) {
 	return rootCmd, nil
 }
 
+func registerTgBot(ctx context.Context, parentCmd *cobra.Command, logger *log.Logger) (*cobra.Command, error) {
+	exec := func(cmd *cobra.Command, args []string) error {
+		return telegram.Exec(ctx, cmd, args, logger)
+	}
+
+	comand := cobra.Command{
+		Use:   "serve",
+		Short: "Starts bot",
+		RunE:  exec,
+	}
+
+	comand.PersistentFlags().String("token", "info", "log level [info|warn|debug]")
+	comand.PersistentFlags().String("whitelist", "", "configuration path file")
+	comand.PersistentFlags().String("formatting", "", "formatting mode of telegramm message")
+	comand.PersistentFlags().String("tgproxy", "", "proxy to telegram client")
+
+	err := comand.MarkPersistentFlagRequired("token")
+	if err != nil {
+		return &comand, err
+	}
+
+	err = bindFlag(&comand, "telegram.white_list", "whitelist")
+	if err != nil {
+		return &comand, err
+	}
+	err = bindFlag(&comand, "telegram.formating", "formating")
+	if err != nil {
+		return &comand, err
+	}
+	err = bindFlag(&comand, "telegram.proxy", "tgproxy")
+	if err != nil {
+		return &comand, err
+	}
+	parentCmd.AddCommand(&comand)
+	return &comand, nil
+}
+
 // BuildAll собираем все команды и припиниваем их к рутовой
 func BuildAll() (*cobra.Command, error) {
 	rootCmd, err := buildRootCmd()
 	if err != nil {
 		return nil, err
 	}
-	_, err = registerServeBot(rootCmd)
+
+	loglevelStr := viper.GetString("log_level")
+	loglevel, err := log.ParseLevel(loglevelStr)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to parse LogLevel %w", err)
+	}
+	logger := log.StandardLogger()
+	logger.Infof("Used config: %s", viper.ConfigFileUsed())
+
+	logger.SetLevel(loglevel)
+
+	ctx := buildSystemContext(logger)
+	_, err = registerTgBot(ctx, rootCmd, logger)
 	if err != nil {
 		return nil, err
 	}
