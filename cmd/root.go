@@ -119,8 +119,8 @@ func registerTgBot(ctx context.Context, parentCmd *cobra.Command, logger *log.Lo
 	}
 
 	comand := cobra.Command{
-		Use:   "serve",
-		Short: "Starts bot",
+		Use:   "telegram",
+		Short: "Starts telegram bot",
 		RunE:  exec,
 	}
 

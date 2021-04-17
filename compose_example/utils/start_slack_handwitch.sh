@@ -6,8 +6,8 @@ build_config () {
     if [[ "$HANDWITCH_USE_WEBHOOK" ]]; then 
         echo "Attemping to build and use webhook configuration"
         HOOK_CFG=$(jq -n \
-            --arg cert "/crt/$TELEGRAM_BOT_SSL_PUB_NAME"\
-            --arg key "/crt/$TELEGRAM_BOT_SSL_PRIV_NAME"\
+            --arg cert "/crt/$SSL_PUB_NAME"\
+            --arg key "/crt/$SSL_PRIV_NAME"\
             --arg webhook $HANDWITCH_USE_WEBHOOK \
             -f config_hook_part.json)
         cat config_template.json | jq --argjson HOOK_CFG "$HOOK_CFG" '(. + {hook:$HOOK_CFG})' > $CONFIG_NAME
@@ -19,7 +19,7 @@ build_config () {
 }
 
 start_bot () {
-    /HandWitch/HandWitch serve --token=$HANDWITCH_TELEGRAMM_TOKEN --config=$CONFIG_NAME
+    /HandWitch/HandWitch slack --token=$HANDWITCH_TELEGRAMM_TOKEN --config=$CONFIG_NAME
 }
 
 build_config

@@ -1,12 +1,23 @@
 version: "3.3"
 services:
-  bot:
-    build: ..
+  telegram_bot:
+    image: glazedcurd/handwitchtelegram
     volumes:
       - ../example/whitelist.json:/HandWitch/whitelist.json 
       - ./descriptions_compose.yaml:/HandWitch/descriptions.yaml 
       - ./crt:/crt/
-      - ./utils:/HandWitch/utils/
+      - ./config_hook_part.json:/HandWitch/config_hook_part.json
+      - ./config_template.json:/HandWitch/config_template.json
+    ports:
+      - "8443:8443"
+    env_file:
+      - "params.env"
+  slack_bot:
+    image: glazedcurd/handwitchslack
+    volumes:
+      - ../example/whitelist.json:/HandWitch/whitelist.json 
+      - ./descriptions_compose.yaml:/HandWitch/descriptions.yaml 
+      - ./crt:/crt/
       - ./config_hook_part.json:/HandWitch/config_hook_part.json
       - ./config_template.json:/HandWitch/config_template.json
     ports:
@@ -14,6 +25,7 @@ services:
     env_file:
       - "params.env"
   server:
+    image: glazedcurd/handwitchexampleserver
     build: ../example
     ports:
       - "8080:8080"

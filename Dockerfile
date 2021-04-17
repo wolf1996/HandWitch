@@ -20,10 +20,5 @@ RUN apk update \
 WORKDIR /HandWitch/
 
 COPY --from=build /build/HandWitch .
-COPY compose_example/utils utils
-COPY compose_example/config_hook_part.json .
-COPY compose_example/config_template.json .
 
 EXPOSE 8443
-
-CMD ["sh", "./utils/start_handwitch.sh"]
