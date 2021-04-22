@@ -21,7 +21,7 @@ services:
       - ./config_hook_part.json:/HandWitch/config_hook_part.json
       - ./config_template.json:/HandWitch/config_template.json
     ports:
-      - "8443:8443"
+      - "8442:8443"
     env_file:
       - "params.env"
   server:

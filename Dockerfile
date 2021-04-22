@@ -20,5 +20,3 @@ RUN apk update \
 WORKDIR /HandWitch/
 
 COPY --from=build /build/HandWitch .
-
-EXPOSE 8443
