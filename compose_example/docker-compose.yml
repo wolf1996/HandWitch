@@ -2,9 +2,9 @@ version: "3.3"
 services:
   bot:
     restart: on-failure
-    image: glazedcurd/handwitch 
+    image: glazedcurd/handwitch
     volumes:
-      - ./whitelist.json:/HandWitch/whitelist.json
+      - ../example/whitelist.json:/HandWitch/whitelist.json
       - ./descriptions_compose.yaml:/HandWitch/descriptions.yaml
       - ./crt:/crt/
     environment:
