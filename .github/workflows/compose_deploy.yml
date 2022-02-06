@@ -20,7 +20,7 @@ jobs:
         passphrase: ${{ secrets.KEY_PASS }}
         port: ${{ secrets.PORT }}
         source: "compose_example/docker-compose.yml"
-        target: "/projects/HandWitch"
+        target: "/projects/HandWitch/compose_example/docker-compose.yml"
         strip_components: 1
     - name: apply compose file
       uses: appleboy/ssh-action@v0.1.4
@@ -31,7 +31,7 @@ jobs:
         passphrase: ${{ secrets.KEY_PASS }}
         port: ${{ secrets.PORT }}
         script: |
-          cd /projects/HandWitch
+          cd /projects/HandWitch/compose_example
           docker-compose pull
           TELEGRAM_BOT_SSL_PUB_NAME=YOURPUBLIC.pem \
           TELEGRAM_BOT_SSL_PRIV_NAME=YOURPRIVATE.key \
