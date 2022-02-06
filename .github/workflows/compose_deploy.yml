@@ -5,6 +5,7 @@ on:
     - master
     paths:
     - compose_example/docker-compose.yml
+    - .github/workflows/compose_deploy.yml
 jobs:
   deploy_compose:
     name: deploy_compose
@@ -20,7 +21,7 @@ jobs:
         passphrase: ${{ secrets.KEY_PASS }}
         port: ${{ secrets.PORT }}
         source: "compose_example/docker-compose.yml"
-        target: "/projects/HandWitch/compose_example/docker-compose.yml"
+        target: "/projects/HandWitch/compose_example/"
         strip_components: 1
     - name: apply compose file
       uses: appleboy/ssh-action@v0.1.4
